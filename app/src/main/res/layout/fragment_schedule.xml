@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@android:color/white">
+
+    <!-- Week navigation bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:background="?attr/colorPrimary">
+
+        <ImageButton
+            android:id="@+id/btnPrevWeek"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/prev_week"
+            android:src="@drawable/ic_chevron_left"
+            android:scaleType="centerInside"
+            android:tint="@android:color/white" />
+
+        <TextView
+            android:id="@+id/tvCurrentWeek"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="第 1 周"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <ImageButton
+            android:id="@+id/btnNextWeek"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/next_week"
+            android:src="@drawable/ic_chevron_right"
+            android:scaleType="centerInside"
+            android:tint="@android:color/white" />
+    </LinearLayout>
+
+    <!-- Day of week header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="36dp"
+        android:orientation="horizontal"
+        android:background="#F5F5F5">
+
+        <TextView
+            android:layout_width="32dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="10sp"
+            android:textColor="#999999" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周一"
+            android:textSize="12sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周二"
+            android:textSize="12sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周三"
+            android:textSize="12sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周四"
+            android:textSize="12sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周五"
+            android:textSize="12sp"
+            android:textColor="#333333" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周六"
+            android:textSize="12sp"
+            android:textColor="#999999" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="周日"
+            android:textSize="12sp"
+            android:textColor="#999999" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0.5dp"
+        android:background="#E0E0E0" />
+
+    <!-- Schedule grid (scrollable) -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="false">
+
+        <com.schedule.app.ui.schedule.ScheduleView
+            android:id="@+id/scheduleView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </ScrollView>
+
+</LinearLayout>

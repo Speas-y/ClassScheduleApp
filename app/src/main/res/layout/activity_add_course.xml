@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="@android:color/white"
+        app:navigationIconTint="@android:color/white" />
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="课程名称"
+                app:boxBackgroundMode="outline">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etCourseName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="教室"
+                app:boxBackgroundMode="outline">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etLocation"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:hint="教师"
+                app:boxBackgroundMode="outline">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etTeacher"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Day of week -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:text="星期"
+                android:textSize="14sp"
+                android:textColor="#666666" />
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipMon"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周一" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipTue"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周二" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipWed"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周三" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipThu"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周四" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipFri"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周五" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSat"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周六" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipSun"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="周日" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- Section range -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="节次"
+                android:textSize="14sp"
+                android:textColor="#666666" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <Spinner
+                    android:id="@+id/spinnerStartSection"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:text="至"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/spinnerEndSection"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <!-- Week range -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="周次"
+                android:textSize="14sp"
+                android:textColor="#666666" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <Spinner
+                    android:id="@+id/spinnerStartWeek"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="12dp"
+                    android:text="至"
+                    android:textSize="16sp" />
+
+                <Spinner
+                    android:id="@+id/spinnerEndWeek"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1" />
+            </LinearLayout>
+
+            <!-- Week type -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupWeekType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipEveryWeek"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="每周"
+                    android:checked="true" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipOddWeek"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="单周" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipEvenWeek"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="双周" />
+            </com.google.android.material.chip.ChipGroup>
+
+            <!-- Color picker -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="颜色"
+                android:textSize="14sp"
+                android:textColor="#666666" />
+
+            <GridLayout
+                android:id="@+id/gridColors"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:columnCount="6"
+                android:alignmentMode="alignBounds" />
+
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_margin="16dp"
+        android:text="保存"
+        android:textSize="16sp" />
+
+</LinearLayout>

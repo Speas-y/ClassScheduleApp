@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <PreferenceCategory
+        android:title="学期设置"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:key="semester_start_date"
+            android:title="学期开始日期"
+            android:summary="未设置（点击选择日期）"
+            app:iconSpaceReserved="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="通知设置"
+        app:iconSpaceReserved="false">
+
+        <SwitchPreferenceCompat
+            android:key="notify_enabled"
+            android:title="课前提醒"
+            android:summary="上课前10分钟推送通知"
+            android:defaultValue="true"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="节次时间"
+        app:iconSpaceReserved="false">
+
+        <ListPreference
+            android:key="total_sections"
+            android:title="每日节数"
+            android:summary="当前: %s 节"
+            android:defaultValue="12"
+            android:entries="@array/section_count_entries"
+            android:entryValues="@array/section_count_values"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="section_times_config"
+            android:title="节次时间配置"
+            android:summary="点击修改各节次上课时间"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="数据管理"
+        app:iconSpaceReserved="false">
+
+        <Preference
+            android:key="import_kbcx_markdown"
+            android:title="从 Markdown 导入课表"
+            android:summary="选择爬虫生成的 kbcx_schedule.md（需含「按星期·节次」表格）"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="import_jwxt_web"
+            android:title="从教务系统网页导入"
+            android:summary="内置浏览器登录正方教务，进入个人课表页后抓取（推荐）"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="clear_all_courses"
+            android:title="清空所有课程"
+            android:summary="删除全部课程数据"
+            app:iconSpaceReserved="false" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
