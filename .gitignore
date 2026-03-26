@@ -9,3 +9,6 @@ app/build/
 .externalNativeBuild
 .cxx
 local.properties
+
+# Cursor 本地/助手规则，不入库
+.cursor/
