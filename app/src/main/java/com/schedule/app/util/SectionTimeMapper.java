@@ -5,6 +5,10 @@ import android.content.SharedPreferences;
 
 import androidx.preference.PreferenceManager;
 
+/**
+ * 节次与上下课时间的映射：默认 12～16 节表在 {@link #DEFAULT_TIMES}，
+ * 用户可在设置里覆盖或通过 SharedPreferences 的 {@code total_sections} 扩展行数。
+ */
 public class SectionTimeMapper {
 
     public static final int MAX_SECTIONS = 16;

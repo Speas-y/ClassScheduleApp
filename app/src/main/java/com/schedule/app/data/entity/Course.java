@@ -4,6 +4,10 @@ import androidx.room.Entity;
 import androidx.room.Ignore;
 import androidx.room.PrimaryKey;
 
+/**
+ * 单门课程在 Room 中的持久化模型。
+ * 周次与单双周语义见 {@link #isActiveInWeek(int)}；节次与校区作息见 {@link com.schedule.app.util.SectionTimeMapper}。
+ */
 @Entity(tableName = "courses")
 public class Course {
 

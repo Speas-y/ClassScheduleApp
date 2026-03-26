@@ -14,6 +14,7 @@ import com.schedule.app.MainActivity;
 import com.schedule.app.R;
 import com.schedule.app.ScheduleApplication;
 
+/** 构建并弹出课前提醒通知（依赖 {@link ScheduleApplication#CHANNEL_ID} 与通知权限）。 */
 public class NotificationHelper {
 
     public static void showCourseReminder(Context context, int notificationId,

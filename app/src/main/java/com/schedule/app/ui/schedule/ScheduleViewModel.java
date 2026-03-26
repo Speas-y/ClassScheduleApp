@@ -16,6 +16,9 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
+/**
+ * 课表页状态：课程列表来自 Repository；当前周次由设置中的学期首日推算，并限制在 1～30 周。
+ */
 public class ScheduleViewModel extends AndroidViewModel {
 
     private final CourseRepository repository;

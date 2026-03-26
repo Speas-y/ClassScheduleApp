@@ -21,6 +21,9 @@ import com.schedule.app.util.SectionTimeMapper;
 
 import java.util.List;
 
+/**
+ * 课表主 UI：绑定 {@link ScheduleView} 与周切换，观察课程与周次变化后刷新网格。
+ */
 public class ScheduleFragment extends Fragment {
 
     private ScheduleViewModel viewModel;

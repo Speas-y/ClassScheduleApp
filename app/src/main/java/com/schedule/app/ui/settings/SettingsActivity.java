@@ -36,6 +36,10 @@ import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.List;
 
+/**
+ * 设置宿主 Activity；具体项在 {@link SettingsActivity.SettingsFragment}（preferences.xml），含学期首日、节次时间、
+ * 提醒开关、Markdown 导入等，变更后常会 {@link AlarmScheduler#scheduleAllAlarms(Context)}。
+ */
 public class SettingsActivity extends AppCompatActivity {
 
     @Override

@@ -23,8 +23,9 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 /**
- * Schedules exact alarms for course reminders 10 minutes before each class.
- * Alarms are set for the upcoming week and refreshed weekly.
+ * 课前提醒：按课程设置与学期首日，为「当前周 + 下一周」内尚未发生的课，
+ * 在上课开始前 10 分钟通过 {@link AlarmManager} 触发 {@link CourseAlarmReceiver}。
+ * Android 12+ 若无精确闹钟权限则降级为非精确。
  */
 public class AlarmScheduler {
 

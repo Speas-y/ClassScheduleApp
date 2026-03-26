@@ -4,6 +4,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
+/**
+ * {@link AlarmManager} 触发的广播：读出 Intent 中的课程信息并调用 {@link NotificationHelper}。
+ */
 public class CourseAlarmReceiver extends BroadcastReceiver {
 
     @Override

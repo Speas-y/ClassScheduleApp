@@ -4,6 +4,10 @@ import android.app.Application;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 
+/**
+ * 应用入口：在进程启动时注册「课程提醒」通知渠道（Android 8+ 必填），
+ * 供 {@link com.schedule.app.notification.NotificationHelper} 发课前通知使用。
+ */
 public class ScheduleApplication extends Application {
 
     public static final String CHANNEL_ID = "course_reminder_channel";

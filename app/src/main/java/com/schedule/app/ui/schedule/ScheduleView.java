@@ -20,6 +20,10 @@ import com.schedule.app.util.SectionTimeMapper;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 自定义 7 列 × N 节网格：自绘格线与左侧节次时间，课程以 {@link androidx.cardview.widget.CardView} 叠加布局；
+ * 非当前周次生效的课程会以灰色半透明显示。
+ */
 public class ScheduleView extends ViewGroup {
 
     private static final int TOTAL_DAYS = 7;

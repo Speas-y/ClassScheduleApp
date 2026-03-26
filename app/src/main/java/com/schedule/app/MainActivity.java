@@ -23,10 +23,15 @@ import com.schedule.app.ui.schedule.ScheduleFragment;
 import com.schedule.app.ui.schedule.ScheduleViewModel;
 import com.schedule.app.ui.settings.SettingsActivity;
 
+/**
+ * 主界面：容器内展示 {@link com.schedule.app.ui.schedule.ScheduleFragment}，
+ * 负责通知权限（Android 13+）、菜单跳转（添加/导入/设置/本周）。
+ */
 public class MainActivity extends AppCompatActivity {
 
     private ScheduleViewModel viewModel;
 
+    /** 用户授权 POST_NOTIFICATIONS 后，重新登记所有课前闹钟。 */
     private final ActivityResultLauncher<String> notificationPermLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
                 if (granted) {

@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+/**
+ * 数据访问封装：向 UI 暴露 LiveData，写操作走单线程 Executor 避免主线程访问数据库。
+ */
 public class CourseRepository {
 
     private final CourseDao courseDao;

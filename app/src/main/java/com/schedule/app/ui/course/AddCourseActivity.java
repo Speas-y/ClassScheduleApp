@@ -30,6 +30,9 @@ import java.util.concurrent.Executors;
 import android.view.View;
 import android.widget.ImageView;
 
+/**
+ * 手动添加或编辑课程（含节次、周次、单双周、颜色），与导入解析写入同一 {@link Course} 表结构。
+ */
 public class AddCourseActivity extends AppCompatActivity {
 
     public static final String EXTRA_COURSE_ID = "course_id";

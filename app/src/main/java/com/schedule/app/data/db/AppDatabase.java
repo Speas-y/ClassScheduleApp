@@ -8,6 +8,9 @@ import androidx.room.RoomDatabase;
 
 import com.schedule.app.data.entity.Course;
 
+/**
+ * Room 单库单表（courses），全应用通过 {@link #getInstance(Context)} 取同一实例。
+ */
 @Database(entities = {Course.class}, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
 

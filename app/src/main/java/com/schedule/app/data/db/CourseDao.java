@@ -11,6 +11,7 @@ import com.schedule.app.data.entity.Course;
 
 import java.util.List;
 
+/** 课程表的 CRUD；同步查询供闹钟调度、导入等在后台线程使用。 */
 @Dao
 public interface CourseDao {
 
