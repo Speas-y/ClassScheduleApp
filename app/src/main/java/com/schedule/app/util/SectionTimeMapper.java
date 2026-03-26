@@ -56,13 +56,38 @@ public class SectionTimeMapper {
     }
 
     public static int getStartHour(Context context, int section) {
-        String time = getStartTime(context, section);
-        return Integer.parseInt(time.split(":")[0]);
+        return parseTimeHourMinute(getStartTime(context, section), section)[0];
     }
 
     public static int getStartMinute(Context context, int section) {
-        String time = getStartTime(context, section);
-        return Integer.parseInt(time.split(":")[1]);
+        return parseTimeHourMinute(getStartTime(context, section), section)[1];
+    }
+
+    /**
+     * 解析 HH:mm；非法或用户自定义异常时回退到默认表，避免闹铃与绘制崩溃。
+     */
+    private static int[] parseTimeHourMinute(String time, int section) {
+        try {
+            if (time != null && time.contains(":")) {
+                String[] parts = time.trim().split(":");
+                if (parts.length >= 2) {
+                    int h = Integer.parseInt(parts[0].trim());
+                    int m = Integer.parseInt(parts[1].trim());
+                    if (h >= 0 && h <= 23 && m >= 0 && m <= 59) {
+                        return new int[]{h, m};
+                    }
+                }
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        String def = (section >= 1 && section <= MAX_SECTIONS)
+                ? DEFAULT_TIMES[section - 1][0] : "08:00";
+        try {
+            String[] p = def.split(":");
+            return new int[]{Integer.parseInt(p[0]), Integer.parseInt(p[1])};
+        } catch (Exception e) {
+            return new int[]{8, 0};
+        }
     }
 
     public static String getDefaultStartTime(int section) {

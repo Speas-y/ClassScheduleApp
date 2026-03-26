@@ -11,6 +11,7 @@ import androidx.preference.PreferenceManager;
 
 import com.schedule.app.data.db.AppDatabase;
 import com.schedule.app.data.entity.Course;
+import com.schedule.app.util.ScheduleConstants;
 import com.schedule.app.util.SectionTimeMapper;
 
 import java.time.DayOfWeek;
@@ -20,6 +21,7 @@ import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
@@ -31,72 +33,113 @@ public class AlarmScheduler {
 
     private static final int REMINDER_MINUTES_BEFORE = 10;
     private static final int ALARM_BASE_REQUEST_CODE = 10000;
+    /** 单次登记最多占用连续 requestCode 个数；需 ≥ 历史单次最大课数×2，并预留余量。 */
+    private static final int MAX_ALARM_SLOTS = 512;
+
+    private static final ExecutorService EXECUTOR = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "AlarmScheduler");
+        t.setDaemon(true);
+        return t;
+    });
 
     public static void scheduleAllAlarms(Context context) {
-        Executors.newSingleThreadExecutor().execute(() -> {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            boolean notifyEnabled = prefs.getBoolean("notify_enabled", true);
-            if (!notifyEnabled) return;
+        Context appContext = context.getApplicationContext();
+        EXECUTOR.execute(() -> scheduleAllAlarmsSync(appContext));
+    }
 
-            String semesterStart = prefs.getString("semester_start_date", "");
-            if (semesterStart.isEmpty()) return;
+    private static void scheduleAllAlarmsSync(Context appContext) {
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(appContext);
+        boolean notifyEnabled = prefs.getBoolean("notify_enabled", true);
+        if (!notifyEnabled) {
+            cancelAllAlarms(appContext);
+            return;
+        }
 
-            LocalDate startDate;
-            try {
-                startDate = LocalDate.parse(semesterStart);
-            } catch (Exception e) {
-                return;
+        String semesterStart = prefs.getString("semester_start_date", "");
+        if (semesterStart.isEmpty()) {
+            cancelAllAlarms(appContext);
+            return;
+        }
+
+        LocalDate startDate;
+        try {
+            startDate = LocalDate.parse(semesterStart);
+        } catch (Exception e) {
+            cancelAllAlarms(appContext);
+            return;
+        }
+
+        LocalDate today = LocalDate.now();
+        long daysBetween = ChronoUnit.DAYS.between(startDate, today);
+        int currentWeek = (int) (daysBetween / 7) + 1;
+        if (currentWeek < 1) currentWeek = 1;
+        if (currentWeek > ScheduleConstants.MAX_TEACHING_WEEK) {
+            currentWeek = ScheduleConstants.MAX_TEACHING_WEEK;
+        }
+
+        List<Course> courses = AppDatabase.getInstance(appContext)
+                .courseDao().getAllCoursesSync();
+
+        cancelAllAlarms(appContext);
+
+        int requestCode = ALARM_BASE_REQUEST_CODE;
+
+        for (int weekOffset = 0; weekOffset <= 1; weekOffset++) {
+            int targetWeek = currentWeek + weekOffset;
+            if (targetWeek > ScheduleConstants.MAX_TEACHING_WEEK) {
+                continue;
             }
 
-            LocalDate today = LocalDate.now();
-            long daysBetween = ChronoUnit.DAYS.between(startDate, today);
-            int currentWeek = (int) (daysBetween / 7) + 1;
-            if (currentWeek < 1) currentWeek = 1;
+            for (Course course : courses) {
+                if (!course.isActiveInWeek(targetWeek)) continue;
 
-            List<Course> courses = AppDatabase.getInstance(context)
-                    .courseDao().getAllCoursesSync();
+                LocalDate weekStart = startDate.plusWeeks(targetWeek - 1);
+                LocalDate courseDate = weekStart.with(TemporalAdjusters.nextOrSame(
+                        DayOfWeek.of(course.getDayOfWeek())));
 
-            cancelAllAlarms(context, courses.size());
+                int startHour = SectionTimeMapper.getStartHour(appContext, course.getStartSection());
+                int startMinute = SectionTimeMapper.getStartMinute(appContext, course.getStartSection());
 
-            int requestCode = ALARM_BASE_REQUEST_CODE;
+                LocalDateTime classTime = courseDate.atTime(startHour, startMinute);
+                LocalDateTime reminderTime = classTime.minusMinutes(REMINDER_MINUTES_BEFORE);
 
-            for (int weekOffset = 0; weekOffset <= 1; weekOffset++) {
-                int targetWeek = currentWeek + weekOffset;
+                if (reminderTime.isBefore(LocalDateTime.now())) continue;
 
-                for (Course course : courses) {
-                    if (!course.isActiveInWeek(targetWeek)) continue;
+                long triggerMillis = reminderTime.atZone(ZoneId.systemDefault())
+                        .toInstant().toEpochMilli();
 
-                    LocalDate weekStart = startDate.plusWeeks(targetWeek - 1);
-                    LocalDate courseDate = weekStart.with(TemporalAdjusters.nextOrSame(
-                            DayOfWeek.of(course.getDayOfWeek())));
+                String timeStr = SectionTimeMapper.getSectionRangeDisplay(
+                        appContext, course.getStartSection(), course.getEndSection());
 
-                    int startHour = SectionTimeMapper.getStartHour(context, course.getStartSection());
-                    int startMinute = SectionTimeMapper.getStartMinute(context, course.getStartSection());
+                scheduleExactAlarm(appContext, requestCode, triggerMillis,
+                        course.getId(), course.getCourseName(),
+                        course.getLocation(), timeStr);
 
-                    LocalDateTime classTime = courseDate.atTime(startHour, startMinute);
-                    LocalDateTime reminderTime = classTime.minusMinutes(REMINDER_MINUTES_BEFORE);
-
-                    if (reminderTime.isBefore(LocalDateTime.now())) continue;
-
-                    long triggerMillis = reminderTime.atZone(ZoneId.systemDefault())
-                            .toInstant().toEpochMilli();
-
-                    String timeStr = SectionTimeMapper.getSectionRangeDisplay(
-                            context, course.getStartSection(), course.getEndSection());
-
-                    scheduleExactAlarm(context, requestCode, triggerMillis,
-                            course.getId(), course.getCourseName(),
-                            course.getLocation(), timeStr);
-
-                    requestCode++;
-                }
+                requestCode++;
             }
-        });
+        }
+    }
+
+    /** 取消本应用登记在 {@link CourseAlarmReceiver} 上的所有课前闹钟（关闭提醒或无法计算课历时调用）。 */
+    public static void cancelAllAlarms(Context context) {
+        Context appContext = context.getApplicationContext();
+        AlarmManager alarmManager = (AlarmManager) appContext.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) return;
+
+        for (int i = 0; i < MAX_ALARM_SLOTS; i++) {
+            Intent intent = new Intent(appContext, CourseAlarmReceiver.class);
+            PendingIntent pi = PendingIntent.getBroadcast(appContext, ALARM_BASE_REQUEST_CODE + i,
+                    intent, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+            if (pi != null) {
+                alarmManager.cancel(pi);
+                pi.cancel();
+            }
+        }
     }
 
     private static void scheduleExactAlarm(Context context, int requestCode,
-                                            long triggerMillis, int courseId,
-                                            String courseName, String location, String time) {
+                                           long triggerMillis, int courseId,
+                                           String courseName, String location, String time) {
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarmManager == null) return;
 
@@ -117,21 +160,6 @@ public class AlarmScheduler {
             }
         } else {
             alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerMillis, pi);
-        }
-    }
-
-    private static void cancelAllAlarms(Context context, int count) {
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (alarmManager == null) return;
-
-        for (int i = 0; i < count + 50; i++) {
-            Intent intent = new Intent(context, CourseAlarmReceiver.class);
-            PendingIntent pi = PendingIntent.getBroadcast(context, ALARM_BASE_REQUEST_CODE + i,
-                    intent, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
-            if (pi != null) {
-                alarmManager.cancel(pi);
-                pi.cancel();
-            }
         }
     }
 }

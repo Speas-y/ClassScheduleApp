@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.schedule.app.R;
 import com.schedule.app.data.entity.Course;
 import com.schedule.app.ui.course.AddCourseActivity;
+import com.schedule.app.util.ScheduleConstants;
 import com.schedule.app.util.SectionTimeMapper;
 
 import java.util.List;
@@ -74,8 +75,9 @@ public class ScheduleFragment extends Fragment {
     }
 
     private void showWeekPicker() {
-        String[] weeks = new String[30];
-        for (int i = 0; i < 30; i++) weeks[i] = "第 " + (i + 1) + " 周";
+        int maxWeek = ScheduleConstants.MAX_TEACHING_WEEK;
+        String[] weeks = new String[maxWeek];
+        for (int i = 0; i < maxWeek; i++) weeks[i] = "第 " + (i + 1) + " 周";
 
         Integer current = viewModel.getCurrentWeek().getValue();
         int selected = current != null ? current - 1 : 0;

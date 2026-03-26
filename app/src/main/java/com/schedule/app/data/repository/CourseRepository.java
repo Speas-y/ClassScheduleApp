@@ -14,14 +14,29 @@ import java.util.concurrent.Executors;
 
 /**
  * 数据访问封装：向 UI 暴露 LiveData，写操作走单线程 Executor 避免主线程访问数据库。
+ * 全进程单例，避免多处 new 重复占用线程池。
  */
 public class CourseRepository {
+
+    private static volatile CourseRepository INSTANCE;
+
+    public static CourseRepository getInstance(Application application) {
+        Application app = (Application) application.getApplicationContext();
+        if (INSTANCE == null) {
+            synchronized (CourseRepository.class) {
+                if (INSTANCE == null) {
+                    INSTANCE = new CourseRepository(app);
+                }
+            }
+        }
+        return INSTANCE;
+    }
 
     private final CourseDao courseDao;
     private final LiveData<List<Course>> allCourses;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    public CourseRepository(Application application) {
+    private CourseRepository(Application application) {
         AppDatabase db = AppDatabase.getInstance(application);
         courseDao = db.courseDao();
         allCourses = courseDao.getAllCourses();

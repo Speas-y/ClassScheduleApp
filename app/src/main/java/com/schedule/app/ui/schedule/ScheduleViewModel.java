@@ -11,13 +11,14 @@ import androidx.preference.PreferenceManager;
 
 import com.schedule.app.data.entity.Course;
 import com.schedule.app.data.repository.CourseRepository;
+import com.schedule.app.util.ScheduleConstants;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 /**
- * 课表页状态：课程列表来自 Repository；当前周次由设置中的学期首日推算，并限制在 1～30 周。
+ * 课表页状态：课程列表来自 Repository；当前周次由设置中的学期首日推算，并限制在 1～{@link ScheduleConstants#MAX_TEACHING_WEEK} 周。
  */
 public class ScheduleViewModel extends AndroidViewModel {
 
@@ -27,7 +28,7 @@ public class ScheduleViewModel extends AndroidViewModel {
 
     public ScheduleViewModel(@NonNull Application application) {
         super(application);
-        repository = new CourseRepository(application);
+        repository = CourseRepository.getInstance(application);
         allCourses = repository.getAllCourses();
         currentWeek.setValue(calculateCurrentWeek());
     }
@@ -41,7 +42,7 @@ public class ScheduleViewModel extends AndroidViewModel {
     }
 
     public void setWeek(int week) {
-        if (week >= 1 && week <= 30) {
+        if (week >= 1 && week <= ScheduleConstants.MAX_TEACHING_WEEK) {
             currentWeek.setValue(week);
         }
     }
@@ -53,7 +54,7 @@ public class ScheduleViewModel extends AndroidViewModel {
 
     public void nextWeek() {
         Integer w = currentWeek.getValue();
-        if (w != null && w < 30) currentWeek.setValue(w + 1);
+        if (w != null && w < ScheduleConstants.MAX_TEACHING_WEEK) currentWeek.setValue(w + 1);
     }
 
     public int calculateCurrentWeek() {
@@ -66,7 +67,7 @@ public class ScheduleViewModel extends AndroidViewModel {
             LocalDate today = LocalDate.now();
             long daysBetween = ChronoUnit.DAYS.between(startDate, today);
             int week = (int) (daysBetween / 7) + 1;
-            return Math.max(1, Math.min(week, 30));
+            return Math.max(1, Math.min(week, ScheduleConstants.MAX_TEACHING_WEEK));
         } catch (Exception e) {
             return 1;
         }

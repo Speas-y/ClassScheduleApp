@@ -61,7 +61,7 @@ public class AddCourseActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_course);
 
-        repository = new CourseRepository(getApplication());
+        repository = CourseRepository.getInstance(getApplication());
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);

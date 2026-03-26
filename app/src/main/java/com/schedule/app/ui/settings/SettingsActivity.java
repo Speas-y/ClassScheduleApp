@@ -126,7 +126,7 @@ public class SettingsActivity extends AppCompatActivity {
                             .setTitle("确认清空")
                             .setMessage("确定要删除所有课程吗？此操作不可撤销。")
                             .setPositiveButton("清空", (dialog, which) -> {
-                                new CourseRepository(requireActivity().getApplication()).deleteAll();
+                                CourseRepository.getInstance(requireActivity().getApplication()).deleteAll();
                                 Toast.makeText(requireContext(), "已清空所有课程", Toast.LENGTH_SHORT).show();
                             })
                             .setNegativeButton("取消", null)
@@ -160,7 +160,7 @@ public class SettingsActivity extends AppCompatActivity {
                                 + " 条课表记录（不同周次会拆成多条）。将删除本地已有课程并导入，是否继续？")
                         .setPositiveButton("导入", (dialog, which) -> {
                             CourseRepository repo =
-                                    new CourseRepository(requireActivity().getApplication());
+                                    CourseRepository.getInstance(requireActivity().getApplication());
                             repo.deleteAll();
                             repo.insertAllAndCallback(courses, () ->
                                     requireActivity().runOnUiThread(() -> {
@@ -365,6 +365,8 @@ public class SettingsActivity extends AppCompatActivity {
                 boolean enabled = prefs.getBoolean(key, true);
                 if (enabled) {
                     AlarmScheduler.scheduleAllAlarms(requireContext());
+                } else {
+                    AlarmScheduler.cancelAllAlarms(requireContext());
                 }
             }
         }

@@ -88,7 +88,7 @@ public class ImportActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_import);
 
-        repository = new CourseRepository(getApplication());
+        repository = CourseRepository.getInstance(getApplication());
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
