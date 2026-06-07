@@ -60,18 +60,18 @@ public class ScheduleView extends ViewGroup {
 
     private void init() {
         totalSections = SectionTimeMapper.getTotalSections(getContext());
-        sectionHeight = dp(55);
-        headerColumnWidth = dp(32);
+        sectionHeight = dp(68);
+        headerColumnWidth = dp(42);
 
-        gridPaint.setColor(Color.parseColor("#E0E0E0"));
-        gridPaint.setStrokeWidth(dp(0.5f));
+        gridPaint.setColor(Color.parseColor("#EEF1F6"));
+        gridPaint.setStrokeWidth(dp(0.6f));
 
-        textPaint.setColor(Color.parseColor("#999999"));
-        textPaint.setTextSize(sp(10));
+        textPaint.setColor(Color.parseColor("#5D6677"));
+        textPaint.setTextSize(sp(11));
         textPaint.setTextAlign(Paint.Align.CENTER);
 
-        timePaint.setColor(Color.parseColor("#BBBBBB"));
-        timePaint.setTextSize(sp(7));
+        timePaint.setColor(Color.parseColor("#A8B0BF"));
+        timePaint.setTextSize(sp(8));
         timePaint.setTextAlign(Paint.Align.CENTER);
     }
 
@@ -97,21 +97,22 @@ public class ScheduleView extends ViewGroup {
         boolean active = course.isActiveInWeek(currentWeek);
 
         CardView card = new CardView(getContext());
-        card.setCardElevation(dp(2));
-        card.setRadius(dp(6));
-        card.setCardBackgroundColor(active ? course.getColor() : Color.parseColor("#40999999"));
+        card.setCardElevation(0);
+        card.setRadius(dp(9));
+        card.setUseCompatPadding(false);
+        card.setCardBackgroundColor(active ? softenColor(course.getColor()) : Color.parseColor("#E9EEF5"));
         card.setTag(course);
         card.setClickable(true);
         card.setFocusable(true);
         card.setForeground(getSelectableBackground());
 
         TextView tv = new TextView(getContext());
-        tv.setText(course.getCourseName() + "\n@" + course.getLocation());
-        tv.setTextColor(active ? Color.WHITE : Color.parseColor("#999999"));
-        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 10);
-        tv.setPadding(dp(4), dp(4), dp(4), dp(4));
+        tv.setText(course.getCourseName() + "\n" + course.getLocation() + "\n" + course.getTeacher());
+        tv.setTextColor(active ? Color.parseColor("#273142") : Color.parseColor("#8B94A5"));
+        tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 9);
+        tv.setPadding(dp(4), dp(5), dp(4), dp(5));
         tv.setGravity(Gravity.CENTER);
-        tv.setLineSpacing(0, 1.1f);
+        tv.setLineSpacing(dp(1), 1.05f);
         card.addView(tv, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
 
         card.setOnClickListener(v -> {
@@ -138,8 +139,8 @@ public class ScheduleView extends ViewGroup {
             View child = getChildAt(i);
             Course course = (Course) child.getTag();
             int sections = course.getEndSection() - course.getStartSection() + 1;
-            int cardWidth = dayWidth - dp(3);
-            int cardHeight = sectionHeight * sections - dp(3);
+            int cardWidth = dayWidth - dp(6);
+            int cardHeight = sectionHeight * sections - dp(8);
             child.measure(
                     MeasureSpec.makeMeasureSpec(cardWidth, MeasureSpec.EXACTLY),
                     MeasureSpec.makeMeasureSpec(cardHeight, MeasureSpec.EXACTLY)
@@ -153,8 +154,8 @@ public class ScheduleView extends ViewGroup {
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             Course course = (Course) child.getTag();
-            int left = headerColumnWidth + (course.getDayOfWeek() - 1) * dayWidth + dp(1);
-            int top = (course.getStartSection() - 1) * sectionHeight + dp(2);
+            int left = headerColumnWidth + (course.getDayOfWeek() - 1) * dayWidth + dp(3);
+            int top = (course.getStartSection() - 1) * sectionHeight + dp(4);
             child.layout(left, top, left + child.getMeasuredWidth(), top + child.getMeasuredHeight());
         }
     }
@@ -182,11 +183,18 @@ public class ScheduleView extends ViewGroup {
         for (int i = 0; i < totalSections; i++) {
             float centerX = headerColumnWidth / 2f;
             float centerY = i * sectionHeight + sectionHeight / 2f;
-            canvas.drawText(String.valueOf(i + 1), centerX, centerY - sp(3), textPaint);
+            canvas.drawText(String.valueOf(i + 1), centerX, centerY - sp(5), textPaint);
 
             String startTime = SectionTimeMapper.getStartTime(getContext(), i + 1);
-            canvas.drawText(startTime, centerX, centerY + sp(7), timePaint);
+            canvas.drawText(startTime, centerX, centerY + sp(8), timePaint);
         }
+    }
+
+    private int softenColor(int color) {
+        int red = (int) (Color.red(color) * 0.2f + 255 * 0.8f);
+        int green = (int) (Color.green(color) * 0.2f + 255 * 0.8f);
+        int blue = (int) (Color.blue(color) * 0.2f + 255 * 0.8f);
+        return Color.rgb(red, green, blue);
     }
 
     private int dp(float dp) {

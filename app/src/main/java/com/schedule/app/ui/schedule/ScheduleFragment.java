@@ -2,6 +2,7 @@ package com.schedule.app.ui.schedule;
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +12,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -20,6 +22,9 @@ import com.schedule.app.ui.course.AddCourseActivity;
 import com.schedule.app.util.ScheduleConstants;
 import com.schedule.app.util.SectionTimeMapper;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -27,9 +32,13 @@ import java.util.List;
  */
 public class ScheduleFragment extends Fragment {
 
+    private static final String[] DAY_NAMES = {"周一", "周二", "周三", "周四", "周五", "周六", "周日"};
+    private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.ofPattern("MM/dd");
+
     private ScheduleViewModel viewModel;
     private ScheduleView scheduleView;
     private TextView tvWeek;
+    private TextView[] dayViews;
 
     @Nullable
     @Override
@@ -46,6 +55,15 @@ public class ScheduleFragment extends Fragment {
 
         scheduleView = view.findViewById(R.id.scheduleView);
         tvWeek = view.findViewById(R.id.tvCurrentWeek);
+        dayViews = new TextView[]{
+                view.findViewById(R.id.tvDayMon),
+                view.findViewById(R.id.tvDayTue),
+                view.findViewById(R.id.tvDayWed),
+                view.findViewById(R.id.tvDayThu),
+                view.findViewById(R.id.tvDayFri),
+                view.findViewById(R.id.tvDaySat),
+                view.findViewById(R.id.tvDaySun)
+        };
         ImageButton btnPrev = view.findViewById(R.id.btnPrevWeek);
         ImageButton btnNext = view.findViewById(R.id.btnNextWeek);
 
@@ -58,12 +76,34 @@ public class ScheduleFragment extends Fragment {
 
         viewModel.getCurrentWeek().observe(getViewLifecycleOwner(), week -> {
             tvWeek.setText("第 " + week + " 周");
+            updateDayHeader(week);
             refreshSchedule();
         });
 
         viewModel.getAllCourses().observe(getViewLifecycleOwner(), courses ->
                 refreshSchedule()
         );
+    }
+
+    private void updateDayHeader(int selectedWeek) {
+        int currentWeek = viewModel.calculateCurrentWeek();
+        LocalDate monday = LocalDate.now()
+                .plusWeeks((long) selectedWeek - currentWeek)
+                .with(DayOfWeek.MONDAY);
+        int todayIndex = LocalDate.now().getDayOfWeek().getValue() - 1;
+        boolean highlightToday = selectedWeek == currentWeek;
+
+        for (int i = 0; i < dayViews.length; i++) {
+            TextView dayView = dayViews[i];
+            dayView.setText(DAY_NAMES[i] + "\n" + monday.plusDays(i).format(DAY_FORMATTER));
+            dayView.setTypeface(Typeface.DEFAULT, highlightToday && i == todayIndex
+                    ? Typeface.BOLD : Typeface.NORMAL);
+            dayView.setBackgroundResource(highlightToday && i == todayIndex
+                    ? R.drawable.bg_day_selected : 0);
+            dayView.setTextColor(ContextCompat.getColor(requireContext(), highlightToday && i == todayIndex
+                    ? android.R.color.white
+                    : (i >= 5 ? R.color.text_tertiary : R.color.text_secondary)));
+        }
     }
 
     private void refreshSchedule() {

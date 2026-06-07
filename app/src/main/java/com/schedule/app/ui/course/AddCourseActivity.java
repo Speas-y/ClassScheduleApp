@@ -5,8 +5,10 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.GridLayout;
+import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -27,9 +29,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import android.view.View;
-import android.widget.ImageView;
-
 /**
  * 手动添加或编辑课程（含节次、周次、单双周、颜色），与导入解析写入同一 {@link Course} 表结构。
  */
@@ -38,9 +37,9 @@ public class AddCourseActivity extends AppCompatActivity {
     public static final String EXTRA_COURSE_ID = "course_id";
 
     private static final int[] PRESET_COLORS = {
-            0xFF4A90D9, 0xFF67C23A, 0xFFE6A23C, 0xFFF56C6C,
-            0xFF909399, 0xFF9B59B6, 0xFF1ABC9C, 0xFFE74C3C,
-            0xFF3498DB, 0xFF2ECC71, 0xFFF39C12, 0xFFE91E63
+            0xFF2F7DFF, 0xFF71D99E, 0xFFA88AF7, 0xFFFFB25E,
+            0xFFFF8BA7, 0xFFFFD36B, 0xFF8ED8F8, 0xFFB7C4D8,
+            0xFF4FC3F7, 0xFF81C784, 0xFFFFA726, 0xFFF06292
     };
 
     private TextInputEditText etCourseName, etLocation, etTeacher;
@@ -146,18 +145,16 @@ public class AddCourseActivity extends AppCompatActivity {
             params.setGravity(Gravity.CENTER);
             iv.setLayoutParams(params);
 
-            if (color == selectedColor) {
-                iv.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
-                lastSelectedColorView = iv;
-            }
+            applyColorSelection(iv, color == selectedColor);
+            if (color == selectedColor) lastSelectedColorView = iv;
 
             iv.setOnClickListener(v -> {
                 if (lastSelectedColorView != null) {
-                    lastSelectedColorView.setBackground(null);
+                    applyColorSelection(lastSelectedColorView, false);
                 }
-                v.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
-                lastSelectedColorView = v;
                 selectedColor = color;
+                applyColorSelection(v, true);
+                lastSelectedColorView = v;
             });
 
             gridColors.addView(iv);
@@ -209,12 +206,20 @@ public class AddCourseActivity extends AppCompatActivity {
     private void updateColorSelection() {
         for (int i = 0; i < gridColors.getChildCount(); i++) {
             View child = gridColors.getChildAt(i);
-            child.setBackground(null);
-            if (i < PRESET_COLORS.length && PRESET_COLORS[i] == selectedColor) {
-                child.setBackgroundResource(android.R.drawable.dialog_holo_light_frame);
+            boolean selected = i < PRESET_COLORS.length && PRESET_COLORS[i] == selectedColor;
+            applyColorSelection(child, selected);
+            if (selected) {
                 lastSelectedColorView = child;
             }
         }
+    }
+
+    private void applyColorSelection(View view, boolean selected) {
+        GradientDrawable background = new GradientDrawable();
+        background.setShape(GradientDrawable.OVAL);
+        background.setColor(Color.TRANSPARENT);
+        background.setStroke(selected ? dp(3) : 0, selectedColor);
+        view.setBackground(background);
     }
 
     private int getDayChipId(int dayOfWeek) {

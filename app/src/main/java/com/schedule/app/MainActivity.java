@@ -5,17 +5,15 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.google.android.material.appbar.MaterialToolbar;
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.schedule.app.notification.AlarmScheduler;
 import com.schedule.app.ui.course.AddCourseActivity;
 import com.schedule.app.ui.import_.ImportActivity;
@@ -44,10 +42,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        MaterialToolbar toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
         viewModel = new ViewModelProvider(this).get(ScheduleViewModel.class);
+        setupMainNavigation();
 
         if (savedInstanceState == null) {
             getSupportFragmentManager()
@@ -63,6 +59,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         viewModel.setWeek(viewModel.calculateCurrentWeek());
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav.setSelectedItemId(R.id.nav_schedule);
     }
 
     private void requestNotificationPermission() {
@@ -74,28 +72,25 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        return true;
-    }
+    private void setupMainNavigation() {
+        FloatingActionButton fabAddCourse = findViewById(R.id.fabAddCourse);
+        fabAddCourse.setOnClickListener(v -> startActivity(new Intent(this, AddCourseActivity.class)));
 
-    @Override
-    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_add) {
-            startActivity(new Intent(this, AddCourseActivity.class));
-            return true;
-        } else if (id == R.id.action_import_jwxt) {
-            startActivity(new Intent(this, ImportActivity.class));
-            return true;
-        } else if (id == R.id.action_settings) {
-            startActivity(new Intent(this, SettingsActivity.class));
-            return true;
-        } else if (id == R.id.action_today) {
-            viewModel.setWeek(viewModel.calculateCurrentWeek());
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav.setSelectedItemId(R.id.nav_schedule);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_schedule) {
+                viewModel.setWeek(viewModel.calculateCurrentWeek());
+                return true;
+            } else if (id == R.id.nav_import) {
+                startActivity(new Intent(this, ImportActivity.class));
+                return true;
+            } else if (id == R.id.nav_settings) {
+                startActivity(new Intent(this, SettingsActivity.class));
+                return true;
+            }
+            return false;
+        });
     }
 }

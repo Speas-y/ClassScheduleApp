@@ -2,143 +2,174 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_app"
     android:orientation="vertical"
-    android:background="@android:color/white">
+    android:paddingStart="14dp"
+    android:paddingTop="18dp"
+    android:paddingEnd="14dp">
 
-    <!-- Week navigation bar -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="52dp"
         android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="8dp"
-        android:background="?attr/colorPrimary">
+        android:orientation="horizontal">
 
-        <ImageButton
-            android:id="@+id/btnPrevWeek"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/prev_week"
-            android:src="@drawable/ic_chevron_left"
-            android:scaleType="centerInside"
-            android:tint="@android:color/white" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/on_background"
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvCurrentWeek"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:layout_marginStart="10dp"
+            android:background="@drawable/bg_week_pill"
             android:gravity="center"
+            android:minWidth="78dp"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
             android:text="第 1 周"
-            android:textColor="@android:color/white"
-            android:textSize="16sp"
+            android:textColor="@color/on_background"
+            android:textSize="13sp"
             android:textStyle="bold" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <ImageButton
+            android:id="@+id/btnPrevWeek"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_circle_soft"
+            android:contentDescription="@string/prev_week"
+            android:padding="8dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_chevron_left"
+            android:tint="@color/primary" />
 
         <ImageButton
             android:id="@+id/btnNextWeek"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:layout_marginStart="8dp"
+            android:background="@drawable/bg_circle_soft"
             android:contentDescription="@string/next_week"
-            android:src="@drawable/ic_chevron_right"
+            android:padding="8dp"
             android:scaleType="centerInside"
-            android:tint="@android:color/white" />
+            android:src="@drawable/ic_chevron_right"
+            android:tint="@color/primary" />
     </LinearLayout>
 
-    <!-- Day of week header -->
     <LinearLayout
+        android:id="@+id/dayHeader"
         android:layout_width="match_parent"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        android:background="#F5F5F5">
+        android:layout_height="66dp"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Space
+            android:layout_width="42dp"
+            android:layout_height="match_parent" />
 
         <TextView
-            android:layout_width="32dp"
-            android:layout_height="match_parent"
-            android:gravity="center"
-            android:textSize="10sp"
-            android:textColor="#999999" />
-
-        <TextView
+            android:id="@+id/tvDayMon"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周一"
-            android:textSize="12sp"
-            android:textColor="#333333" />
+            android:text="周一\n--/--"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDayTue"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周二"
-            android:textSize="12sp"
-            android:textColor="#333333" />
+            android:text="周二\n--/--"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDayWed"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周三"
-            android:textSize="12sp"
-            android:textColor="#333333" />
+            android:text="周三\n--/--"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDayThu"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周四"
-            android:textSize="12sp"
-            android:textColor="#333333" />
+            android:text="周四\n--/--"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDayFri"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周五"
-            android:textSize="12sp"
-            android:textColor="#333333" />
+            android:text="周五\n--/--"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDaySat"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周六"
-            android:textSize="12sp"
-            android:textColor="#999999" />
+            android:text="周六\n--/--"
+            android:textColor="@color/text_tertiary"
+            android:textSize="11sp" />
 
         <TextView
+            android:id="@+id/tvDaySun"
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="52dp"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="周日"
-            android:textSize="12sp"
-            android:textColor="#999999" />
+            android:text="周日\n--/--"
+            android:textColor="@color/text_tertiary"
+            android:textSize="11sp" />
     </LinearLayout>
 
-    <View
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="0.5dp"
-        android:background="#E0E0E0" />
+        android:layout_height="0dp"
+        android:layout_marginBottom="8dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_card"
+        android:paddingTop="6dp">
 
-    <!-- Schedule grid (scrollable) -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:fillViewport="false">
-
-        <com.schedule.app.ui.schedule.ScheduleView
-            android:id="@+id/scheduleView"
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-    </ScrollView>
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="false"
+            android:overScrollMode="never"
+            android:paddingBottom="16dp">
+
+            <com.schedule.app.ui.schedule.ScheduleView
+                android:id="@+id/scheduleView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </ScrollView>
+    </FrameLayout>
 
 </LinearLayout>
