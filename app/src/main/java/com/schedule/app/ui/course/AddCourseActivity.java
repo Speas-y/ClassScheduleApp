@@ -131,6 +131,7 @@ public class AddCourseActivity extends AppCompatActivity {
         for (int i = 0; i < PRESET_COLORS.length; i++) {
             final int color = PRESET_COLORS[i];
 
+            // 颜色本身用实心圆展示，选中态用外圈描边，和卡片式表单保持轻量视觉。
             ImageView iv = new ImageView(this);
             GradientDrawable circle = new GradientDrawable();
             circle.setShape(GradientDrawable.OVAL);
@@ -162,6 +163,7 @@ public class AddCourseActivity extends AppCompatActivity {
     }
 
     private void loadCourse(int courseId) {
+        // Room 查询放到后台线程，避免编辑课程时阻塞界面首帧。
         executor.execute(() -> {
             Course course = repository.getCourseById(courseId);
             if (course == null) {
@@ -218,6 +220,7 @@ public class AddCourseActivity extends AppCompatActivity {
         GradientDrawable background = new GradientDrawable();
         background.setShape(GradientDrawable.OVAL);
         background.setColor(Color.TRANSPARENT);
+        // 使用当前选中的课程色作为描边，让用户能直观看到保存后的色块颜色。
         background.setStroke(selected ? dp(3) : 0, selectedColor);
         view.setBackground(background);
     }

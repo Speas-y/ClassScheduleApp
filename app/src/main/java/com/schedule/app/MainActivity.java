@@ -23,7 +23,7 @@ import com.schedule.app.ui.settings.SettingsActivity;
 
 /**
  * 主界面：容器内展示 {@link com.schedule.app.ui.schedule.ScheduleFragment}，
- * 负责通知权限（Android 13+）、菜单跳转（添加/导入/设置/本周）。
+ * 负责通知权限（Android 13+）、底部导航跳转（课表/导入/设置）与悬浮添加入口。
  */
 public class MainActivity extends AppCompatActivity {
 
@@ -76,6 +76,7 @@ public class MainActivity extends AppCompatActivity {
         FloatingActionButton fabAddCourse = findViewById(R.id.fabAddCourse);
         fabAddCourse.setOnClickListener(v -> startActivity(new Intent(this, AddCourseActivity.class)));
 
+        // 底部导航只承载主要入口；添加课程保持为右下角悬浮按钮，贴近课表页的高频操作。
         BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setSelectedItemId(R.id.nav_schedule);
         bottomNav.setOnItemSelectedListener(item -> {

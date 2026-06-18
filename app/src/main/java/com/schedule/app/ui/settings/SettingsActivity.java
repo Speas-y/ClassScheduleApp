@@ -81,6 +81,7 @@ public class SettingsActivity extends AppCompatActivity
     }
 
     private void setupClickListeners() {
+        // 每一行设置项都对应一个原偏好项，保留既有 SharedPreferences 键名以兼容旧数据。
         findViewById(R.id.rowSemesterStart).setOnClickListener(v -> showDatePicker());
         findViewById(R.id.rowTotalSections).setOnClickListener(v -> showTotalSectionsDialog());
         findViewById(R.id.rowSectionTimes).setOnClickListener(v -> showSectionTimesDialog());
@@ -97,6 +98,7 @@ public class SettingsActivity extends AppCompatActivity
     }
 
     private void setNotifySwitchListener() {
+        // 开关只负责写入设置，真正的闹钟注册/取消统一在偏好监听里处理。
         switchNotify.setOnCheckedChangeListener((buttonView, isChecked) ->
                 prefs.edit().putBoolean("notify_enabled", isChecked).apply());
     }
@@ -124,6 +126,7 @@ public class SettingsActivity extends AppCompatActivity
                     .setMessage("解析到 " + courses.size()
                             + " 条课表记录（不同周次会拆成多条）。将删除本地已有课程并导入，是否继续？")
                     .setPositiveButton("导入", (dialog, which) -> {
+                        // 导入采用全量替换，避免旧课表与新课表混在同一个教学周期里。
                         CourseRepository repo = CourseRepository.getInstance(getApplication());
                         repo.deleteAll();
                         repo.insertAllAndCallback(courses, () -> runOnUiThread(() -> {
@@ -212,6 +215,7 @@ public class SettingsActivity extends AppCompatActivity
         tvTotalSectionsSummary.setText("当前: " + getTotalSections() + " 节");
         tvSectionTimesSummary.setText(buildSectionTimesSummary());
 
+        // 程序刷新开关状态时临时移除监听，避免触发一次无意义的偏好写入。
         switchNotify.setOnCheckedChangeListener(null);
         switchNotify.setChecked(prefs.getBoolean("notify_enabled", true));
         setNotifySwitchListener();
@@ -299,6 +303,7 @@ public class SettingsActivity extends AppCompatActivity
 
     private void resetAllSectionTimes() {
         SharedPreferences.Editor editor = prefs.edit();
+        // 只清除自定义节次时间，保留每日节数等其他设置。
         for (int i = 1; i <= SectionTimeMapper.MAX_SECTIONS; i++) {
             editor.remove("section_" + i + "_start");
             editor.remove("section_" + i + "_end");

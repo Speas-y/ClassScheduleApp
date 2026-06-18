@@ -100,6 +100,7 @@ public class ScheduleView extends ViewGroup {
         card.setCardElevation(0);
         card.setRadius(dp(9));
         card.setUseCompatPadding(false);
+        // 课程原色用于保存个性化选择，显示时柔化成浅色块以匹配当前浅色 UI。
         card.setCardBackgroundColor(active ? softenColor(course.getColor()) : Color.parseColor("#E9EEF5"));
         card.setTag(course);
         card.setClickable(true);
@@ -166,20 +167,20 @@ public class ScheduleView extends ViewGroup {
         int width = getWidth();
         int dayWidth = (width - headerColumnWidth) / TOTAL_DAYS;
 
-        // Horizontal lines
+        // 横向节次分隔线
         for (int i = 0; i <= totalSections; i++) {
             float y = i * sectionHeight;
             canvas.drawLine(0, y, width, y, gridPaint);
         }
 
-        // Vertical lines
+        // 纵向星期分隔线
         canvas.drawLine(headerColumnWidth, 0, headerColumnWidth, getHeight(), gridPaint);
         for (int i = 1; i <= TOTAL_DAYS; i++) {
             float x = headerColumnWidth + i * dayWidth;
             canvas.drawLine(x, 0, x, getHeight(), gridPaint);
         }
 
-        // Section numbers + times
+        // 左侧节次编号与开始时间
         for (int i = 0; i < totalSections; i++) {
             float centerX = headerColumnWidth / 2f;
             float centerY = i * sectionHeight + sectionHeight / 2f;
@@ -191,6 +192,7 @@ public class ScheduleView extends ViewGroup {
     }
 
     private int softenColor(int color) {
+        // 将课程色向白色混合，保留辨识度同时降低饱和度。
         int red = (int) (Color.red(color) * 0.2f + 255 * 0.8f);
         int green = (int) (Color.green(color) * 0.2f + 255 * 0.8f);
         int blue = (int) (Color.blue(color) * 0.2f + 255 * 0.8f);

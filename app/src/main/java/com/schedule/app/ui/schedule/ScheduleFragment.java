@@ -87,6 +87,7 @@ public class ScheduleFragment extends Fragment {
 
     private void updateDayHeader(int selectedWeek) {
         int currentWeek = viewModel.calculateCurrentWeek();
+        // 以本周周一为锚点推算被选中周的日期，避免依赖学期开始日是否已配置。
         LocalDate monday = LocalDate.now()
                 .plusWeeks((long) selectedWeek - currentWeek)
                 .with(DayOfWeek.MONDAY);
@@ -96,6 +97,7 @@ public class ScheduleFragment extends Fragment {
         for (int i = 0; i < dayViews.length; i++) {
             TextView dayView = dayViews[i];
             dayView.setText(DAY_NAMES[i] + "\n" + monday.plusDays(i).format(DAY_FORMATTER));
+            // 只有查看当前教学周时高亮今天，翻到其他周时保持普通日期样式。
             dayView.setTypeface(Typeface.DEFAULT, highlightToday && i == todayIndex
                     ? Typeface.BOLD : Typeface.NORMAL);
             dayView.setBackgroundResource(highlightToday && i == todayIndex

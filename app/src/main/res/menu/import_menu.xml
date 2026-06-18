@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/action_open_external_browser"
+        android:title="@string/open_external_browser" />
+    <item
+        android:id="@+id/action_import_external_file"
+        android:title="@string/import_external_file" />
+    <item
         android:id="@+id/action_change_jwxt_url"
         android:title="@string/change_jwxt_url" />
 </menu>
