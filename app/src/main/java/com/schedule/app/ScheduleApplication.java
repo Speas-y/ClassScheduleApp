@@ -24,7 +24,7 @@ public class ScheduleApplication extends Application {
                 "课程提醒",
                 NotificationManager.IMPORTANCE_HIGH
         );
-        channel.setDescription("在上课前10分钟提醒您");
+        channel.setDescription("上课和下课提醒通知");
         channel.enableVibration(true);
         channel.setShowBadge(true);
 

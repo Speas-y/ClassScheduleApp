@@ -1,6 +1,6 @@
 package com.schedule.app.ui.import_;
 
-import android.graphics.Color;
+import com.schedule.app.util.CourseColorPalette;
 
 import com.schedule.app.data.entity.Course;
 
@@ -27,22 +27,7 @@ import java.util.regex.Pattern;
  */
 public class ZhengfangParser {
 
-    private static final int[] CARD_COLORS = {
-            Color.parseColor("#4FC3F7"),
-            Color.parseColor("#81C784"),
-            Color.parseColor("#FFB74D"),
-            Color.parseColor("#E57373"),
-            Color.parseColor("#BA68C8"),
-            Color.parseColor("#4DD0E1"),
-            Color.parseColor("#FFD54F"),
-            Color.parseColor("#F06292"),
-            Color.parseColor("#AED581"),
-            Color.parseColor("#7986CB"),
-            Color.parseColor("#FF8A65"),
-            Color.parseColor("#A1887F"),
-    };
-
-    private int colorIndex = 0;
+    private final CourseColorPalette.Allocator colorAllocator = new CourseColorPalette.Allocator();
 
     public List<Course> parse(String html) {
         List<Course> courses = new ArrayList<>();
@@ -207,8 +192,7 @@ public class ZhengfangParser {
 
         if (courseName.isEmpty()) return null;
 
-        int color = CARD_COLORS[colorIndex % CARD_COLORS.length];
-        colorIndex++;
+        int color = colorAllocator.getColor(courseName);
 
         return new Course(courseName, teacher, location,
                 dayOfWeek, startSection, endSection,

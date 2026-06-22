@@ -22,11 +22,15 @@
     <string name="jwxt_url_title">教务系统地址</string>
     <string name="jwxt_url_message">请输入学校正方教务根地址，随后在页面中登录并打开「学生个人课表」等页面，再点右下角导入按钮。</string>
     <string name="import_confirm_title">导入确认</string>
-    <string name="import_confirm_message">解析到 %1$d 条课表记录（%2$s）。将清除已有课程并导入，是否继续？</string>
+    <string name="import_confirm_message">解析到 %1$d 条课表记录（%2$s）。请选择导入方式：</string>
     <string name="import_confirm_ok">导入</string>
     <string name="import_success">已导入 %1$d 条</string>
+    <string name="import_merge">合并导入</string>
+    <string name="import_overwrite">清空后导入</string>
     <string name="import_method_json">与爬虫相同的课表接口 JSON，准确度最高</string>
     <string name="import_method_html">网页表格解析（校方若改版可能需更新 App）</string>
     <string name="import_failed_html">未能解析。请进入正方「学生课表」页面（能看到课表网格或列表），再点导入；若仍失败可尝试设置里的 Markdown 导入。</string>
     <string name="import_parse_error">解析失败: %1$s</string>
+    <string name="section_time_config">节次时间配置</string>
+    <string name="section_time_template_hint">%1$s 开始 · %2$d分钟/节 · 休息%3$d分钟</string>
 </resources>

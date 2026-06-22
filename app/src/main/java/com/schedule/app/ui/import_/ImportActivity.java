@@ -378,7 +378,17 @@ public class ImportActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle(R.string.import_confirm_title)
                 .setMessage(getString(R.string.import_confirm_message, courses.size(), methodHint))
-                .setPositiveButton(R.string.import_confirm_ok, (dialog, which) -> {
+                .setPositiveButton("合并导入", (dialog, which) -> {
+                    repository.mergeCourses(courses, (added, skipped) -> runOnUiThread(() -> {
+                        AlarmScheduler.scheduleAllAlarms(ImportActivity.this);
+                        String msg = "新增 " + added + " 条";
+                        if (skipped > 0) msg += "，跳过 " + skipped + " 条重复";
+                        Toast.makeText(ImportActivity.this, msg, Toast.LENGTH_SHORT).show();
+                        progressBar.setVisibility(View.GONE);
+                        finish();
+                    }));
+                })
+                .setNeutralButton("清空后导入", (dialog, which) -> {
                     repository.deleteAll();
                     repository.insertAllAndCallback(courses, () -> runOnUiThread(() -> {
                         AlarmScheduler.scheduleAllAlarms(ImportActivity.this);

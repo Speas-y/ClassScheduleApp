@@ -12,7 +12,9 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import java.util.List;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.button.MaterialButton;
@@ -289,9 +291,85 @@ public class AddCourseActivity extends AppCompatActivity {
         }
 
         int weekType = getWeekType();
+        final int finalDayOfWeek = dayOfWeek;
+        final int finalStartSection = startSection;
+        final int finalEndSection = endSection;
+        final int finalStartWeek = startWeek;
+        final int finalEndWeek = endWeek;
+        final int finalWeekType = weekType;
 
+        // 冲突检测：查同一天、节次有交集的课程
+        executor.execute(() -> {
+            List<Course> conflicting = repository
+                    .findConflicting(finalDayOfWeek, finalStartSection, finalEndSection);
+
+            // 过滤：排除自身（编辑模式）、检查周次重叠和单双周兼容
+            List<Course> realConflicts = new java.util.ArrayList<>();
+            for (Course c : conflicting) {
+                if (c.getId() == editingCourseId) continue; // 排除自身
+                if (!weeksOverlap(finalStartWeek, finalEndWeek, finalWeekType,
+                        c.getStartWeek(), c.getEndWeek(), c.getWeekType())) continue;
+                realConflicts.add(c);
+            }
+
+            runOnUiThread(() -> {
+                if (realConflicts.isEmpty()) {
+                    doSaveCourse(name, teacher, location, finalDayOfWeek,
+                            finalStartSection, finalEndSection,
+                            finalStartWeek, finalEndWeek, finalWeekType);
+                } else {
+                    showConflictDialog(realConflicts, name, teacher, location,
+                            finalDayOfWeek, finalStartSection, finalEndSection,
+                            finalStartWeek, finalEndWeek, finalWeekType);
+                }
+            });
+        });
+    }
+
+    /**
+     * 判断两门课的周次范围和单双周是否可能冲突。
+     */
+    private boolean weeksOverlap(int startW1, int endW1, int type1,
+                                 int startW2, int endW2, int type2) {
+        // 周次范围无交集则不冲突
+        if (startW1 > endW2 || startW2 > endW1) return false;
+        // 两门都是每周则一定冲突
+        if (type1 == 0 && type2 == 0) return true;
+        // 一门每周与另一门单/双周冲突
+        if (type1 == 0 || type2 == 0) return true;
+        // 两门都是单周或都是双周则冲突
+        if (type1 == type2) return true;
+        // 一门单周一门双周不冲突
+        return false;
+    }
+
+    private void showConflictDialog(List<Course> conflicts,
+                                    String name, String teacher, String location,
+                                    int dayOfWeek, int startSec, int endSec,
+                                    int startWeek, int endWeek, int weekType) {
+        StringBuilder msg = new StringBuilder("以下课程与当前课程时间冲突：\n");
+        for (Course c : conflicts) {
+            String wt = c.getWeekType() == 1 ? "单周" : (c.getWeekType() == 2 ? "双周" : "每周");
+            msg.append("• ").append(c.getCourseName())
+                    .append("（第").append(c.getStartSection()).append("-").append(c.getEndSection())
+                    .append("节，").append(wt).append("）\n");
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("时间冲突")
+                .setMessage(msg.toString())
+                .setPositiveButton("仍然保存", (dialog, which) ->
+                        doSaveCourse(name, teacher, location, dayOfWeek,
+                                startSec, endSec, startWeek, endWeek, weekType))
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    private void doSaveCourse(String name, String teacher, String location,
+                              int dayOfWeek, int startSec, int endSec,
+                              int startWeek, int endWeek, int weekType) {
         Course course = new Course(name, teacher, location, dayOfWeek,
-                startSection, endSection, startWeek, endWeek, weekType, selectedColor);
+                startSec, endSec, startWeek, endWeek, weekType, selectedColor);
 
         if (editingCourseId != -1) {
             course.setId(editingCourseId);

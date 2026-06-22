@@ -80,8 +80,35 @@ public class ScheduleView extends ViewGroup {
         this.courses = courses != null ? courses : new ArrayList<>();
         this.currentWeek = currentWeek;
         removeAllViews();
-        for (Course course : this.courses) {
+        
+        // 创建一个临时列表用于排序，避免修改原始数据
+        List<Course> sortedCourses = new ArrayList<>(this.courses);
+        
+        // 排序：活跃的课程排在后面（这样会绘制在最上层）
+        java.util.Collections.sort(sortedCourses, (c1, c2) -> {
+            boolean active1 = c1.isActiveInWeek(currentWeek);
+            boolean active2 = c2.isActiveInWeek(currentWeek);
+            if (active1 == active2) return 0;
+            return active1 ? 1 : -1;
+        });
+        
+        // 用于检测同一时间段是否已经添加了活跃课程
+        java.util.Map<String, Boolean> slotHasActive = new java.util.HashMap<>();
+        
+        for (Course course : sortedCourses) {
             if (course.getStartSection() <= totalSections) {
+                // 检查是否需要添加这个课程
+                // 如果当前课程不活跃，但同一时间段已经有活跃课程了，就不添加（避免遮挡）
+                if (!course.isActiveInWeek(currentWeek)) {
+                    String slotKey = course.getDayOfWeek() + "_" + course.getStartSection() + "_" + course.getEndSection();
+                    if (slotHasActive.containsKey(slotKey)) {
+                        continue; // 跳过不活跃的课程，如果该位置已经有活跃课程
+                    }
+                } else {
+                    // 标记该时间段已有活跃课程
+                    String slotKey = course.getDayOfWeek() + "_" + course.getStartSection() + "_" + course.getEndSection();
+                    slotHasActive.put(slotKey, true);
+                }
                 addCourseCard(course);
             }
         }
@@ -152,12 +179,111 @@ public class ScheduleView extends ViewGroup {
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         int dayWidth = (getWidth() - headerColumnWidth) / TOTAL_DAYS;
+        
+        // Track occupied positions to handle overlapping courses
+        java.util.Map<String, java.util.List<RectF>> occupiedPositions = new java.util.HashMap<>();
+        
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             Course course = (Course) child.getTag();
-            int left = headerColumnWidth + (course.getDayOfWeek() - 1) * dayWidth + dp(3);
-            int top = (course.getStartSection() - 1) * sectionHeight + dp(4);
-            child.layout(left, top, left + child.getMeasuredWidth(), top + child.getMeasuredHeight());
+            
+            int dayIndex = course.getDayOfWeek() - 1;
+            int startSection = course.getStartSection();
+            int endSection = course.getEndSection();
+            int sections = endSection - startSection + 1;
+            
+            // Calculate base position
+            int baseLeft = headerColumnWidth + dayIndex * dayWidth + dp(3);
+            int baseTop = (startSection - 1) * sectionHeight + dp(4);
+            int cardWidth = dayWidth - dp(6);
+            int cardHeight = sectionHeight * sections - dp(8);
+            
+            // Create key for this day+time slot
+            String slotKey = dayIndex + "_" + startSection + "_" + endSection;
+            
+            // Get or create list of occupied positions for this slot
+            java.util.List<RectF> occupied = occupiedPositions.get(slotKey);
+            if (occupied == null) {
+                occupied = new java.util.ArrayList<>();
+                occupiedPositions.put(slotKey, occupied);
+            }
+            
+            // Find a position that doesn't overlap with existing courses
+            int left = baseLeft;
+            int top = baseTop;
+            boolean foundPosition = false;
+            
+            // Try to fit in the same column first
+            RectF newRect = new RectF(left, top, left + cardWidth, top + cardHeight);
+            boolean overlaps = false;
+            for (RectF existing : occupied) {
+                if (RectF.intersects(newRect, existing)) {
+                    overlaps = true;
+                    break;
+                }
+            }
+            
+            if (!overlaps) {
+                // No overlap, use this position
+                foundPosition = true;
+            } else {
+                // Try shifting horizontally within the day column
+                int maxShifts = 3; // Try up to 3 shifts
+                for (int shift = 1; shift <= maxShifts; shift++) {
+                    int shiftedLeft = baseLeft + (shift * (cardWidth / (maxShifts + 1)));
+                    if (shiftedLeft + cardWidth > headerColumnWidth + (dayIndex + 1) * dayWidth - dp(3)) {
+                        break; // Don't go outside the column
+                    }
+                    
+                    newRect.set(shiftedLeft, top, shiftedLeft + cardWidth, top + cardHeight);
+                    overlaps = false;
+                    for (RectF existing : occupied) {
+                        if (RectF.intersects(newRect, existing)) {
+                            overlaps = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!overlaps) {
+                        left = shiftedLeft;
+                        foundPosition = true;
+                        break;
+                    }
+                }
+                
+                // If still overlapping, try stacking vertically
+                if (!foundPosition) {
+                    int stackOffset = dp(8);
+                    for (int stack = 1; stack <= 5; stack++) {
+                        int stackedTop = top + (stack * stackOffset);
+                        newRect.set(left, stackedTop, left + cardWidth, stackedTop + cardHeight);
+                        overlaps = false;
+                        for (RectF existing : occupied) {
+                            if (RectF.intersects(newRect, existing)) {
+                                overlaps = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!overlaps) {
+                            top = stackedTop;
+                            foundPosition = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            // If still no position found, use the base position (will overlap but at least show)
+            if (!foundPosition) {
+                left = baseLeft;
+                top = baseTop;
+            }
+            
+            // Add to occupied positions
+            occupied.add(new RectF(left, top, left + cardWidth, top + cardHeight));
+            
+            child.layout(left, top, left + cardWidth, top + cardHeight);
         }
     }
 

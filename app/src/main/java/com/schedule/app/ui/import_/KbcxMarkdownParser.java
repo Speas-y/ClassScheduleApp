@@ -1,13 +1,11 @@
 package com.schedule.app.ui.import_;
 
-import android.graphics.Color;
+import com.schedule.app.util.CourseColorPalette;
 
 import com.schedule.app.data.entity.Course;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,25 +15,9 @@ import java.util.regex.Pattern;
  */
 public class KbcxMarkdownParser {
 
-    private static final int[] CARD_COLORS = {
-            Color.parseColor("#4FC3F7"),
-            Color.parseColor("#81C784"),
-            Color.parseColor("#FFB74D"),
-            Color.parseColor("#E57373"),
-            Color.parseColor("#BA68C8"),
-            Color.parseColor("#4DD0E1"),
-            Color.parseColor("#FFD54F"),
-            Color.parseColor("#F06292"),
-            Color.parseColor("#AED581"),
-            Color.parseColor("#7986CB"),
-            Color.parseColor("#FF8A65"),
-            Color.parseColor("#A1887F"),
-    };
-
     private static final Pattern SECTION_PAT = Pattern.compile("^(\\d+)-(\\d+)节?$");
 
-    private final Map<String, Integer> colorByCourseName = new HashMap<>();
-    private int colorRotor = 0;
+    private final CourseColorPalette.Allocator colorAllocator = new CourseColorPalette.Allocator();
 
     public List<Course> parse(String markdown) {
         List<Course> out = new ArrayList<>();
@@ -150,16 +132,8 @@ public class KbcxMarkdownParser {
     }
 
     private int colorForCourseName(String courseName) {
-        Integer existing = colorByCourseName.get(courseName);
-        if (existing != null) {
-            return existing;
-        }
-        int c = CARD_COLORS[colorRotor % CARD_COLORS.length];
-        colorRotor++;
-        colorByCourseName.put(courseName, c);
-        return c;
+        return colorAllocator.getColor(courseName);
     }
-
     private static int chineseDayToNumber(String cell) {
         String s = cell.trim();
         switch (s) {

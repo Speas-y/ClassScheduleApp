@@ -16,7 +16,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -50,6 +51,7 @@ dependencies {
 
     // HTML 解析（正方教务 Web 导入）
     implementation 'org.jsoup:jsoup:1.17.2'
+    implementation 'androidx.work:work-runtime:2.9.0'
 
     testImplementation 'junit:junit:4.13.2'
 }

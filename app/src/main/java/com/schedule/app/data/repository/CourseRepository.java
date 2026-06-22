@@ -1,7 +1,12 @@
 package com.schedule.app.data.repository;
 
 import android.app.Application;
+import android.os.Handler;
+import android.os.Looper;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.annotation.WorkerThread;
 import androidx.lifecycle.LiveData;
 
 import com.schedule.app.data.db.AppDatabase;
@@ -20,7 +25,7 @@ public class CourseRepository {
 
     private static volatile CourseRepository INSTANCE;
 
-    public static CourseRepository getInstance(Application application) {
+    public static CourseRepository getInstance(@NonNull Application application) {
         Application app = (Application) application.getApplicationContext();
         if (INSTANCE == null) {
             synchronized (CourseRepository.class) {
@@ -35,8 +40,9 @@ public class CourseRepository {
     private final CourseDao courseDao;
     private final LiveData<List<Course>> allCourses;
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
-    private CourseRepository(Application application) {
+    private CourseRepository(@NonNull Application application) {
         AppDatabase db = AppDatabase.getInstance(application);
         courseDao = db.courseDao();
         allCourses = courseDao.getAllCourses();
@@ -46,27 +52,30 @@ public class CourseRepository {
         return allCourses;
     }
 
+    @WorkerThread
     public List<Course> getAllCoursesSync() {
         return courseDao.getAllCoursesSync();
     }
 
+    @WorkerThread
+    @Nullable
     public Course getCourseById(int id) {
         return courseDao.getCourseById(id);
     }
 
-    public void insert(Course course) {
+    public void insert(@NonNull Course course) {
         executor.execute(() -> courseDao.insert(course));
     }
 
-    public void insertAll(List<Course> courses) {
+    public void insertAll(@NonNull List<Course> courses) {
         executor.execute(() -> courseDao.insertAll(courses));
     }
 
-    public void update(Course course) {
+    public void update(@NonNull Course course) {
         executor.execute(() -> courseDao.update(course));
     }
 
-    public void delete(Course course) {
+    public void delete(@NonNull Course course) {
         executor.execute(() -> courseDao.delete(course));
     }
 
@@ -74,10 +83,46 @@ public class CourseRepository {
         executor.execute(courseDao::deleteAll);
     }
 
-    public void insertAllAndCallback(List<Course> courses, Runnable onComplete) {
+    /**
+     * 插入全部课程并在完成后回调（回调在主线程执行）。
+     */
+    public void insertAllAndCallback(@NonNull List<Course> courses, @Nullable Runnable onComplete) {
         executor.execute(() -> {
             courseDao.insertAll(courses);
-            if (onComplete != null) onComplete.run();
+            if (onComplete != null) {
+                mainHandler.post(onComplete);
+            }
         });
+    }
+
+    /**
+     * 合并导入：逐条查重（courseName + dayOfWeek + startSection + endSection），
+     * 已存在则跳过，不存在则插入。整个操作在单个事务中执行以保证性能。
+     * 回调在主线程执行。
+     *
+     * @param courses    待导入课程列表
+     * @param onComplete 回调参数 [新增数, 跳过数]
+     */
+    public void mergeCourses(@NonNull List<Course> courses, @Nullable MergeCallback onComplete) {
+        executor.execute(() -> {
+            int[] result = courseDao.mergeInsert(courses);
+            int added = result[0];
+            int skipped = result[1];
+            if (onComplete != null) {
+                mainHandler.post(() -> onComplete.onComplete(added, skipped));
+            }
+        });
+    }
+
+    /** 查找冲突课程（同一天、节次区间有交集）。 */
+    @WorkerThread
+    @NonNull
+    public List<Course> findConflicting(int dayOfWeek, int startSection, int endSection) {
+        return courseDao.findConflicting(dayOfWeek, startSection, endSection);
+    }
+
+    /** 合并导入结果回调。 */
+    public interface MergeCallback {
+        void onComplete(int added, int skipped);
     }
 }

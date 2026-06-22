@@ -40,6 +40,10 @@
             android:label="@string/settings" />
 
         <activity
+            android:name=".ui.settings.SectionTimeConfigActivity"
+            android:label="节次时间配置" />
+
+        <activity
             android:name=".ui.import_.ImportActivity"
             android:label="@string/import_schedule"
             android:exported="false" />

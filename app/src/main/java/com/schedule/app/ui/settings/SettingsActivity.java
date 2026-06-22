@@ -1,19 +1,19 @@
 package com.schedule.app.ui.settings;
 
 import android.app.DatePickerDialog;
-import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.TextView;
+import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.preference.PreferenceManager;
 
@@ -46,7 +46,11 @@ public class SettingsActivity extends AppCompatActivity
     private TextView tvSemesterSummary;
     private TextView tvTotalSectionsSummary;
     private TextView tvSectionTimesSummary;
-    private SwitchMaterial switchNotify;
+    private SwitchMaterial switchBeforeClassNotify;
+    private SwitchMaterial switchAfterClassNotify;
+    private TextView tvBeforeClassTime;
+    private TextView tvBeforeClassSummary;
+    private TextView tvAfterClassSummary;
 
     private final ActivityResultLauncher<String[]> markdownImportLauncher =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
@@ -77,14 +81,19 @@ public class SettingsActivity extends AppCompatActivity
         tvSemesterSummary = findViewById(R.id.tvSemesterSummary);
         tvTotalSectionsSummary = findViewById(R.id.tvTotalSectionsSummary);
         tvSectionTimesSummary = findViewById(R.id.tvSectionTimesSummary);
-        switchNotify = findViewById(R.id.switchNotify);
+        switchBeforeClassNotify = findViewById(R.id.switchBeforeClassNotify);
+        switchAfterClassNotify = findViewById(R.id.switchAfterClassNotify);
+        tvBeforeClassTime = findViewById(R.id.tvBeforeClassTime);
+        tvBeforeClassSummary = findViewById(R.id.tvBeforeClassSummary);
+        tvAfterClassSummary = findViewById(R.id.tvAfterClassSummary);
     }
 
     private void setupClickListeners() {
-        // 每一行设置项都对应一个原偏好项，保留既有 SharedPreferences 键名以兼容旧数据。
         findViewById(R.id.rowSemesterStart).setOnClickListener(v -> showDatePicker());
         findViewById(R.id.rowTotalSections).setOnClickListener(v -> showTotalSectionsDialog());
-        findViewById(R.id.rowSectionTimes).setOnClickListener(v -> showSectionTimesDialog());
+        // 节次时间配置：跳转到新的独立页面
+        findViewById(R.id.rowSectionTimes).setOnClickListener(v ->
+                startActivity(new Intent(this, SectionTimeConfigActivity.class)));
         findViewById(R.id.rowImportMarkdown).setOnClickListener(v -> markdownImportLauncher.launch(new String[]{
                 "text/markdown",
                 "text/plain",
@@ -95,18 +104,28 @@ public class SettingsActivity extends AppCompatActivity
                 .setOnClickListener(v -> startActivity(new Intent(this, ImportActivity.class)));
         findViewById(R.id.rowClearCourses).setOnClickListener(v -> showClearCoursesDialog());
         setNotifySwitchListener();
+        setAfterClassNotifySwitchListener();
+        setBeforeClassTimeClickListener();
     }
 
     private void setNotifySwitchListener() {
-        // 开关只负责写入设置，真正的闹钟注册/取消统一在偏好监听里处理。
-        switchNotify.setOnCheckedChangeListener((buttonView, isChecked) ->
-                prefs.edit().putBoolean("notify_enabled", isChecked).apply());
+        switchBeforeClassNotify.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefs.edit().putBoolean("notify_enabled", isChecked).apply();
+            updateReminderSummary();
+        });
+    }
+
+    private void setAfterClassNotifySwitchListener() {
+        switchAfterClassNotify.setOnCheckedChangeListener((buttonView, isChecked) ->
+                prefs.edit().putBoolean("after_class_notify_enabled", isChecked).apply());
+    }
+
+    private void setBeforeClassTimeClickListener() {
+        findViewById(R.id.rowBeforeClassTime).setOnClickListener(v -> showBeforeClassTimePicker());
     }
 
     private void onMarkdownDocumentPicked(@Nullable Uri uri) {
-        if (uri == null) {
-            return;
-        }
+        if (uri == null) return;
         try (InputStream is = getContentResolver().openInputStream(uri)) {
             if (is == null) {
                 Toast.makeText(this, "无法读取所选文件", Toast.LENGTH_SHORT).show();
@@ -116,27 +135,15 @@ public class SettingsActivity extends AppCompatActivity
             KbcxMarkdownParser parser = new KbcxMarkdownParser();
             List<Course> courses = parser.parse(text);
             if (courses.isEmpty()) {
-                Toast.makeText(this,
-                        "未解析到课程。请确认文件是由 format_kbcx 生成的 kbcx_schedule.md，且包含「按星期 · 节次」表格。",
-                        Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "未解析到课程", Toast.LENGTH_LONG).show();
                 return;
             }
-            new AlertDialog.Builder(this)
-                    .setTitle("导入课表")
-                    .setMessage("解析到 " + courses.size()
-                            + " 条课表记录（不同周次会拆成多条）。将删除本地已有课程并导入，是否继续？")
-                    .setPositiveButton("导入", (dialog, which) -> {
-                        // 导入采用全量替换，避免旧课表与新课表混在同一个教学周期里。
-                        CourseRepository repo = CourseRepository.getInstance(getApplication());
-                        repo.deleteAll();
-                        repo.insertAllAndCallback(courses, () -> runOnUiThread(() -> {
-                            AlarmScheduler.scheduleAllAlarms(this);
-                            Toast.makeText(this, "已导入 " + courses.size() + " 条记录",
-                                    Toast.LENGTH_SHORT).show();
-                        }));
-                    })
-                    .setNegativeButton("取消", null)
-                    .show();
+            CourseRepository.getInstance(getApplication()).deleteAll();
+            CourseRepository.getInstance(getApplication()).insertAllAndCallback(courses, () -> {
+                AlarmScheduler.scheduleAllAlarms(this);
+                runOnUiThread(() -> Toast.makeText(this,
+                        "已导入 " + courses.size() + " 条", Toast.LENGTH_SHORT).show());
+            });
         } catch (IOException e) {
             Toast.makeText(this, "读取失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
@@ -154,20 +161,18 @@ public class SettingsActivity extends AppCompatActivity
 
     private void showDatePicker() {
         String saved = prefs.getString("semester_start_date", "");
-
         Calendar cal = Calendar.getInstance();
         if (!saved.isEmpty()) {
             try {
                 LocalDate date = LocalDate.parse(saved);
                 cal.set(date.getYear(), date.getMonthValue() - 1, date.getDayOfMonth());
             } catch (Exception ignored) {
-                // Invalid legacy value should not block choosing a new date.
             }
         }
 
+        // 使用原生的DatePickerDialog，更稳定
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
-            String dateStr = String.format(Locale.CHINA, "%04d-%02d-%02d",
-                    year, month + 1, dayOfMonth);
+            String dateStr = String.format(Locale.CHINA, "%04d-%02d-%02d", year, month + 1, dayOfMonth);
             prefs.edit().putString("semester_start_date", dateStr).apply();
             AlarmScheduler.scheduleAllAlarms(this);
             Toast.makeText(this, "学期开始日期已设置为 " + dateStr, Toast.LENGTH_SHORT).show();
@@ -180,12 +185,8 @@ public class SettingsActivity extends AppCompatActivity
         String current = String.valueOf(getTotalSections());
         int selected = 0;
         for (int i = 0; i < values.length; i++) {
-            if (values[i].equals(current)) {
-                selected = i;
-                break;
-            }
+            if (values[i].equals(current)) { selected = i; break; }
         }
-
         new AlertDialog.Builder(this)
                 .setTitle("每日节数")
                 .setSingleChoiceItems(entries, selected, (dialog, which) -> {
@@ -213,105 +214,62 @@ public class SettingsActivity extends AppCompatActivity
         String date = prefs.getString("semester_start_date", "");
         tvSemesterSummary.setText(date.isEmpty() ? "未设置，点击选择日期" : date);
         tvTotalSectionsSummary.setText("当前: " + getTotalSections() + " 节");
-        tvSectionTimesSummary.setText(buildSectionTimesSummary());
 
-        // 程序刷新开关状态时临时移除监听，避免触发一次无意义的偏好写入。
-        switchNotify.setOnCheckedChangeListener(null);
-        switchNotify.setChecked(prefs.getBoolean("notify_enabled", true));
+        // 模板摘要
+        String firstStart = SectionTimeMapper.getFirstStartTime(this);
+        int duration = SectionTimeMapper.getDuration(this);
+        int breakMin = SectionTimeMapper.getBreakMinutes(this);
+        tvSectionTimesSummary.setText(firstStart + " 开始 · " + duration + "分钟/节 · 休息" + breakMin + "分钟");
+
+        switchBeforeClassNotify.setOnCheckedChangeListener(null);
+        switchBeforeClassNotify.setChecked(prefs.getBoolean("notify_enabled", true));
         setNotifySwitchListener();
+        
+        switchAfterClassNotify.setOnCheckedChangeListener(null);
+        switchAfterClassNotify.setChecked(prefs.getBoolean("after_class_notify_enabled", false));
+        setAfterClassNotifySwitchListener();
+        setBeforeClassTimeClickListener();
+        
+        int beforeMinutes = prefs.getInt("before_class_reminder_minutes", 10);
+        tvBeforeClassTime.setText(beforeMinutes + " 分钟");
+        
+        updateReminderSummary();
     }
 
     private int getTotalSections() {
         return SectionTimeMapper.getTotalSections(this);
     }
 
-    private String buildSectionTimesSummary() {
-        int total = getTotalSections();
-        StringBuilder sb = new StringBuilder();
-        for (int i = 1; i <= total; i += 2) {
-            int end = Math.min(i + 1, total);
-            String startTime = SectionTimeMapper.getStartTime(this, i);
-            String endTime = SectionTimeMapper.getEndTime(this, end);
-            if (i == end) {
-                sb.append("第").append(i).append("节: ").append(startTime).append("-").append(endTime);
-            } else {
-                sb.append("第").append(i).append("-").append(end)
-                        .append("节: ").append(startTime).append("-").append(endTime);
+    private void showBeforeClassTimePicker() {
+        String[] options = {"5 分钟", "10 分钟", "15 分钟", "20 分钟", "30 分钟"};
+        int[] values = {5, 10, 15, 20, 30};
+        int currentValue = prefs.getInt("before_class_reminder_minutes", 10);
+        int selectedIndex = 1; // 默认10分钟
+        for (int i = 0; i < values.length; i++) {
+            if (values[i] == currentValue) {
+                selectedIndex = i;
+                break;
             }
-            if (i + 1 < total) sb.append("\n");
         }
-        return sb.toString();
-    }
 
-    private String[] buildSectionItems() {
-        int total = getTotalSections();
-        String[] items = new String[total];
-        for (int i = 0; i < total; i++) {
-            int section = i + 1;
-            String start = SectionTimeMapper.getStartTime(this, section);
-            String end = SectionTimeMapper.getEndTime(this, section);
-            items[i] = "第" + section + "节:  " + start + " - " + end;
-        }
-        return items;
-    }
-
-    private void showSectionTimesDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("节次时间配置")
-                .setItems(buildSectionItems(), (dialog, which) -> showStartTimePicker(which + 1))
-                .setNeutralButton("恢复默认", (dialog, which) -> resetAllSectionTimes())
-                .setNegativeButton("关闭", null)
+                .setTitle("提前提醒时间")
+                .setSingleChoiceItems(options, selectedIndex, (dialog, which) -> {
+                    prefs.edit().putInt("before_class_reminder_minutes", values[which]).apply();
+                    updateReminderSummary();
+                    dialog.dismiss();
+                })
+                .setNegativeButton("取消", null)
                 .show();
     }
 
-    private void showStartTimePicker(int section) {
-        String currentStart = SectionTimeMapper.getStartTime(this, section);
-        int hour = Integer.parseInt(currentStart.split(":")[0]);
-        int minute = Integer.parseInt(currentStart.split(":")[1]);
-
-        TimePickerDialog dialog = new TimePickerDialog(this, (view, h, m) -> {
-            String startTime = String.format(Locale.CHINA, "%02d:%02d", h, m);
-            showEndTimePicker(section, startTime);
-        }, hour, minute, true);
-        dialog.setTitle("第" + section + "节 - 上课时间");
-        dialog.show();
-    }
-
-    private void showEndTimePicker(int section, String startTime) {
-        String currentEnd = SectionTimeMapper.getEndTime(this, section);
-        int hour = Integer.parseInt(currentEnd.split(":")[0]);
-        int minute = Integer.parseInt(currentEnd.split(":")[1]);
-
-        TimePickerDialog dialog = new TimePickerDialog(this, (view, h, m) -> {
-            String endTime = String.format(Locale.CHINA, "%02d:%02d", h, m);
-            saveSectionTime(section, startTime, endTime);
-        }, hour, minute, true);
-        dialog.setTitle("第" + section + "节 - 下课时间");
-        dialog.show();
-    }
-
-    private void saveSectionTime(int section, String startTime, String endTime) {
-        prefs.edit()
-                .putString("section_" + section + "_start", startTime)
-                .putString("section_" + section + "_end", endTime)
-                .apply();
-
-        AlarmScheduler.scheduleAllAlarms(this);
-        Toast.makeText(this, "第" + section + "节时间已更新: " + startTime + " - " + endTime,
-                Toast.LENGTH_SHORT).show();
-    }
-
-    private void resetAllSectionTimes() {
-        SharedPreferences.Editor editor = prefs.edit();
-        // 只清除自定义节次时间，保留每日节数等其他设置。
-        for (int i = 1; i <= SectionTimeMapper.MAX_SECTIONS; i++) {
-            editor.remove("section_" + i + "_start");
-            editor.remove("section_" + i + "_end");
-        }
-        editor.apply();
-
-        AlarmScheduler.scheduleAllAlarms(this);
-        Toast.makeText(this, "已恢复默认时间", Toast.LENGTH_SHORT).show();
+    private void updateReminderSummary() {
+        boolean enabled = prefs.getBoolean("notify_enabled", true);
+        int minutes = prefs.getInt("before_class_reminder_minutes", 10);
+        tvBeforeClassSummary.setText(enabled ? "上课前 " + minutes + " 分钟推送通知" : "已关闭");
+        
+        boolean afterClassEnabled = prefs.getBoolean("after_class_notify_enabled", false);
+        tvAfterClassSummary.setText(afterClassEnabled ? "下课时推送通知" : "已关闭");
     }
 
     @Override
@@ -331,7 +289,6 @@ public class SettingsActivity extends AppCompatActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key == null) return;
         updateSummaries();
-
         if (key.equals("notify_enabled")) {
             boolean enabled = sharedPreferences.getBoolean(key, true);
             if (enabled) {

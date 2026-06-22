@@ -1,6 +1,6 @@
 package com.schedule.app.ui.import_;
 
-import android.graphics.Color;
+import com.schedule.app.util.CourseColorPalette;
 
 import com.schedule.app.data.entity.Course;
 
@@ -8,9 +8,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -20,25 +18,9 @@ import java.util.regex.Pattern;
  */
 public class ZhengfangKbListJsonParser {
 
-    private static final int[] CARD_COLORS = {
-            Color.parseColor("#4FC3F7"),
-            Color.parseColor("#81C784"),
-            Color.parseColor("#FFB74D"),
-            Color.parseColor("#E57373"),
-            Color.parseColor("#BA68C8"),
-            Color.parseColor("#4DD0E1"),
-            Color.parseColor("#FFD54F"),
-            Color.parseColor("#F06292"),
-            Color.parseColor("#AED581"),
-            Color.parseColor("#7986CB"),
-            Color.parseColor("#FF8A65"),
-            Color.parseColor("#A1887F"),
-    };
-
     private static final Pattern JCOR_RANGE = Pattern.compile("(\\d+)-(\\d+)");
 
-    private final Map<String, Integer> colorByCourseName = new HashMap<>();
-    private int colorRotor = 0;
+    private final CourseColorPalette.Allocator colorAllocator = new CourseColorPalette.Allocator();
 
     public List<Course> parse(String jsonText) {
         List<Course> out = new ArrayList<>();
@@ -93,8 +75,40 @@ public class ZhengfangKbListJsonParser {
                         row.optString("lh", "").trim(),
                         row.optString("cdmc", "").trim());
 
-                List<ZhengfangWeekTextParser.WeekSpan> spans =
-                        ZhengfangWeekTextParser.parseWeekSpans(row.optString("zcd", ""));
+                String zcd = row.optString("zcd", "").trim();
+                
+                // 解析周次信息
+                List<ZhengfangWeekTextParser.WeekSpan> spans = new ArrayList<>();
+                
+                if (!zcd.isEmpty()) {
+                    // 尝试解析格式如 "9-11周(单),12-16周"
+                    String[] weekParts = zcd.split("[,，]");
+                    for (String part : weekParts) {
+                        String trimmedPart = part.trim();
+                        if (!trimmedPart.isEmpty()) {
+                            List<ZhengfangWeekTextParser.WeekSpan> partSpans =
+                                    ZhengfangWeekTextParser.parseWeekSpans(trimmedPart);
+                            spans.addAll(partSpans);
+                        }
+                    }
+                }
+                
+                // 如果zcd为空或解析失败，尝试从其他字段推断周次
+                if (spans.isEmpty()) {
+                    // 检查是否有其他字段包含周次信息
+                    String otherWeekInfo = "";
+                    if (row.has("zcd") && !row.getString("zcd").isEmpty()) {
+                        otherWeekInfo = row.getString("zcd");
+                    } else if (row.has("zc") && !row.getString("zc").isEmpty()) {
+                        otherWeekInfo = row.getString("zc");
+                    }
+                    
+                    if (!otherWeekInfo.isEmpty()) {
+                        spans = ZhengfangWeekTextParser.parseWeekSpans(otherWeekInfo);
+                    }
+                }
+                
+                // 如果仍然为空，使用默认值
                 if (spans.isEmpty()) {
                     spans.add(new ZhengfangWeekTextParser.WeekSpan(1, 20, 0));
                 }
@@ -123,14 +137,7 @@ public class ZhengfangKbListJsonParser {
     }
 
     private int colorForCourseName(String courseName) {
-        Integer existing = colorByCourseName.get(courseName);
-        if (existing != null) {
-            return existing;
-        }
-        int c = CARD_COLORS[colorRotor % CARD_COLORS.length];
-        colorRotor++;
-        colorByCourseName.put(courseName, c);
-        return c;
+        return colorAllocator.getColor(courseName);
     }
 
     private static int[] parseSections(String jcor, String jcFallback) {

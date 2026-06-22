@@ -21,6 +21,8 @@ import com.schedule.app.ui.schedule.ScheduleFragment;
 import com.schedule.app.ui.schedule.ScheduleViewModel;
 import com.schedule.app.ui.settings.SettingsActivity;
 
+import java.util.Objects;
+
 /**
  * 主界面：容器内展示 {@link com.schedule.app.ui.schedule.ScheduleFragment}，
  * 负责通知权限（Android 13+）、底部导航跳转（课表/导入/设置）与悬浮添加入口。
@@ -28,6 +30,7 @@ import com.schedule.app.ui.settings.SettingsActivity;
 public class MainActivity extends AppCompatActivity {
 
     private ScheduleViewModel viewModel;
+    private BottomNavigationView bottomNav;
 
     /** 用户授权 POST_NOTIFICATIONS 后，重新登记所有课前闹钟。 */
     private final ActivityResultLauncher<String> notificationPermLauncher =
@@ -58,9 +61,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        viewModel.setWeek(viewModel.calculateCurrentWeek());
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
-        bottomNav.setSelectedItemId(R.id.nav_schedule);
+        // 仅在周次有变化时刷新，避免不必要的 UI 重绘
+        int currentWeek = viewModel.calculateCurrentWeek();
+        Integer existingWeek = viewModel.getCurrentWeek().getValue();
+        if (!Objects.equals(existingWeek, currentWeek)) {
+            viewModel.setWeek(currentWeek);
+        }
     }
 
     private void requestNotificationPermission() {
@@ -77,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         fabAddCourse.setOnClickListener(v -> startActivity(new Intent(this, AddCourseActivity.class)));
 
         // 底部导航只承载主要入口；添加课程保持为右下角悬浮按钮，贴近课表页的高频操作。
-        BottomNavigationView bottomNav = findViewById(R.id.bottomNav);
+        bottomNav = findViewById(R.id.bottomNav);
         bottomNav.setSelectedItemId(R.id.nav_schedule);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();

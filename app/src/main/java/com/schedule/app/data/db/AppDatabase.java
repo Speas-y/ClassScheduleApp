@@ -10,6 +10,7 @@ import com.schedule.app.data.entity.Course;
 
 /**
  * Room 单库单表（courses），全应用通过 {@link #getInstance(Context)} 取同一实例。
+ * 当前 version=1，未来升级实体字段时需添加 Migration 或递增版本号。
  */
 @Database(entities = {Course.class}, version = 1, exportSchema = false)
 public abstract class AppDatabase extends RoomDatabase {
@@ -26,7 +27,9 @@ public abstract class AppDatabase extends RoomDatabase {
                             context.getApplicationContext(),
                             AppDatabase.class,
                             "class_schedule_db"
-                    ).build();
+                    )
+                    .fallbackToDestructiveMigration()
+                    .build();
                 }
             }
         }
