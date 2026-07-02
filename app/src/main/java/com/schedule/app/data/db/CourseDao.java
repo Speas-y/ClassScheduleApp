@@ -43,6 +43,13 @@ public interface CourseDao {
     @Query("DELETE FROM courses")
     void deleteAll();
 
+    /** 用一次事务完成整表替换，避免导入过程中出现“已清空但未写入”的中间状态。 */
+    @Transaction
+    default void replaceAll(List<Course> courses) {
+        deleteAll();
+        insertAll(courses);
+    }
+
     /**
      * 查重：课程名 + 星期 + 起止节次完全一致视为重复。
      */

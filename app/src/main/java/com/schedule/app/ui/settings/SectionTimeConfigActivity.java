@@ -208,6 +208,7 @@ public class SectionTimeConfigActivity extends AppCompatActivity {
                     String time = String.format(Locale.CHINA, "%02d:%02d", h, m);
                     SectionTimeMapper.saveSectionOverride(this, section, time);
                     refreshPreview();
+                    AlarmScheduler.scheduleAllAlarms(this);
                 });
             });
 
@@ -220,6 +221,7 @@ public class SectionTimeConfigActivity extends AppCompatActivity {
                             .setPositiveButton("清除", (dialog, which) -> {
                                 SectionTimeMapper.clearSectionOverride(this, section);
                                 refreshPreview();
+                                AlarmScheduler.scheduleAllAlarms(this);
                             })
                             .setNegativeButton("取消", null)
                             .show();

@@ -14,11 +14,12 @@ import com.schedule.app.MainActivity;
 import com.schedule.app.R;
 import com.schedule.app.ScheduleApplication;
 
-/** 构建并弹出课前提醒通知（依赖 {@link ScheduleApplication#CHANNEL_ID} 与通知权限）。 */
+/** 构建并弹出课程提醒通知（依赖 {@link ScheduleApplication#CHANNEL_ID} 与通知权限）。 */
 public class NotificationHelper {
 
     public static void showCourseReminder(Context context, int notificationId,
-                                           String courseName, String location, String time) {
+                                           String courseName, String location, String time,
+                                           String title, String message) {
         if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
                 != PackageManager.PERMISSION_GRANTED) {
             return;
@@ -29,13 +30,13 @@ public class NotificationHelper {
         PendingIntent pendingIntent = PendingIntent.getActivity(context, notificationId,
                 intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        String contentText = "📍 " + location + "  ⏰ " + time;
+        String contentText = message + "  📍 " + location + "  ⏰ " + time;
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context, ScheduleApplication.CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("即将上课：" + courseName)
+                .setContentTitle(title + "：" + courseName)
                 .setContentText(contentText)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText + "\n课程将在10分钟后开始，请做好准备！"))
+                .setStyle(new NotificationCompat.BigTextStyle().bigText(contentText))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setContentIntent(pendingIntent)
                 .setAutoCancel(true)

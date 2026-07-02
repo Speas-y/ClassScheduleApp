@@ -74,7 +74,11 @@ public class MainActivity extends AppCompatActivity {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
                 notificationPermLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            } else {
+                AlarmScheduler.scheduleAllAlarms(this);
             }
+        } else {
+            AlarmScheduler.scheduleAllAlarms(this);
         }
     }
 

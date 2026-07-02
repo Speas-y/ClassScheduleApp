@@ -1,7 +1,5 @@
 package com.schedule.app.util;
 
-import android.graphics.Color;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,18 +11,18 @@ public final class CourseColorPalette {
     private CourseColorPalette() {}
 
     public static final int[] PRESET_COLORS = {
-            Color.parseColor("#4FC3F7"),
-            Color.parseColor("#81C784"),
-            Color.parseColor("#FFB74D"),
-            Color.parseColor("#E57373"),
-            Color.parseColor("#BA68C8"),
-            Color.parseColor("#4DD0E1"),
-            Color.parseColor("#FFD54F"),
-            Color.parseColor("#F06292"),
-            Color.parseColor("#AED581"),
-            Color.parseColor("#7986CB"),
-            Color.parseColor("#FF8A65"),
-            Color.parseColor("#A1887F"),
+            0xFF4FC3F7,
+            0xFF81C784,
+            0xFFFFB74D,
+            0xFFE57373,
+            0xFFBA68C8,
+            0xFF4DD0E1,
+            0xFFFFD54F,
+            0xFFF06292,
+            0xFFAED581,
+            0xFF7986CB,
+            0xFFFF8A65,
+            0xFFA1887F,
     };
 
     /**

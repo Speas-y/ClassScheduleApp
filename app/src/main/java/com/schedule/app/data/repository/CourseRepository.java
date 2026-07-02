@@ -96,6 +96,18 @@ public class CourseRepository {
     }
 
     /**
+     * 清空后导入：删除旧课程与写入新课程放在同一个 Room 事务中完成。
+     */
+    public void replaceAll(@NonNull List<Course> courses, @Nullable Runnable onComplete) {
+        executor.execute(() -> {
+            courseDao.replaceAll(courses);
+            if (onComplete != null) {
+                mainHandler.post(onComplete);
+            }
+        });
+    }
+
+    /**
      * 合并导入：逐条查重（courseName + dayOfWeek + startSection + endSection），
      * 已存在则跳过，不存在则插入。整个操作在单个事务中执行以保证性能。
      * 回调在主线程执行。

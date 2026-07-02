@@ -1,39 +1,38 @@
 package com.schedule.app.ui.settings;
 
+import android.Manifest;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.widget.TextView;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 import com.schedule.app.R;
-import com.schedule.app.data.entity.Course;
 import com.schedule.app.data.repository.CourseRepository;
 import com.schedule.app.notification.AlarmScheduler;
+import com.schedule.app.ui.import_.ImportConfirmDialog;
 import com.schedule.app.ui.import_.ImportActivity;
-import com.schedule.app.ui.import_.KbcxMarkdownParser;
+import com.schedule.app.ui.import_.ImportResult;
+import com.schedule.app.ui.import_.ScheduleImportService;
 import com.schedule.app.util.SectionTimeMapper;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.Calendar;
-import java.util.List;
 import java.util.Locale;
 
 /**
@@ -51,6 +50,17 @@ public class SettingsActivity extends AppCompatActivity
     private TextView tvBeforeClassTime;
     private TextView tvBeforeClassSummary;
     private TextView tvAfterClassSummary;
+    private TextView tvReminderPermissionSummary;
+    private CourseRepository repository;
+    private ScheduleImportService importService;
+
+    private final ActivityResultLauncher<String> notificationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
+                updateReminderPermissionSummary();
+                if (granted) {
+                    AlarmScheduler.scheduleAllAlarms(this);
+                }
+            });
 
     private final ActivityResultLauncher<String[]> markdownImportLauncher =
             registerForActivityResult(new ActivityResultContracts.OpenDocument(),
@@ -61,6 +71,8 @@ public class SettingsActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        repository = CourseRepository.getInstance(getApplication());
+        importService = new ScheduleImportService(this);
 
         setupToolbar();
         bindViews();
@@ -86,6 +98,7 @@ public class SettingsActivity extends AppCompatActivity
         tvBeforeClassTime = findViewById(R.id.tvBeforeClassTime);
         tvBeforeClassSummary = findViewById(R.id.tvBeforeClassSummary);
         tvAfterClassSummary = findViewById(R.id.tvAfterClassSummary);
+        tvReminderPermissionSummary = findViewById(R.id.tvReminderPermissionSummary);
     }
 
     private void setupClickListeners() {
@@ -103,6 +116,7 @@ public class SettingsActivity extends AppCompatActivity
         findViewById(R.id.rowImportWeb)
                 .setOnClickListener(v -> startActivity(new Intent(this, ImportActivity.class)));
         findViewById(R.id.rowClearCourses).setOnClickListener(v -> showClearCoursesDialog());
+        findViewById(R.id.rowReminderPermission).setOnClickListener(v -> handleReminderPermissionClick());
         setNotifySwitchListener();
         setAfterClassNotifySwitchListener();
         setBeforeClassTimeClickListener();
@@ -111,7 +125,6 @@ public class SettingsActivity extends AppCompatActivity
     private void setNotifySwitchListener() {
         switchBeforeClassNotify.setOnCheckedChangeListener((buttonView, isChecked) -> {
             prefs.edit().putBoolean("notify_enabled", isChecked).apply();
-            updateReminderSummary();
         });
     }
 
@@ -126,37 +139,16 @@ public class SettingsActivity extends AppCompatActivity
 
     private void onMarkdownDocumentPicked(@Nullable Uri uri) {
         if (uri == null) return;
-        try (InputStream is = getContentResolver().openInputStream(uri)) {
-            if (is == null) {
-                Toast.makeText(this, "无法读取所选文件", Toast.LENGTH_SHORT).show();
-                return;
-            }
-            String text = readStreamAsUtf8String(is);
-            KbcxMarkdownParser parser = new KbcxMarkdownParser();
-            List<Course> courses = parser.parse(text);
-            if (courses.isEmpty()) {
+        try {
+            ImportResult result = importService.parseText(importService.readTextFromUri(uri));
+            if (result.getCourses().isEmpty()) {
                 Toast.makeText(this, "未解析到课程", Toast.LENGTH_LONG).show();
                 return;
             }
-            CourseRepository.getInstance(getApplication()).deleteAll();
-            CourseRepository.getInstance(getApplication()).insertAllAndCallback(courses, () -> {
-                AlarmScheduler.scheduleAllAlarms(this);
-                runOnUiThread(() -> Toast.makeText(this,
-                        "已导入 " + courses.size() + " 条", Toast.LENGTH_SHORT).show());
-            });
-        } catch (IOException e) {
-            Toast.makeText(this, "读取失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ImportConfirmDialog.show(this, repository, result, null, null);
+        } catch (Exception e) {
+            Toast.makeText(this, "导入失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
-    }
-
-    private static String readStreamAsUtf8String(InputStream is) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        byte[] b = new byte[8192];
-        int n;
-        while ((n = is.read(b)) != -1) {
-            buf.write(b, 0, n);
-        }
-        return buf.toString(StandardCharsets.UTF_8.name());
     }
 
     private void showDatePicker() {
@@ -174,7 +166,6 @@ public class SettingsActivity extends AppCompatActivity
         new DatePickerDialog(this, (view, year, month, dayOfMonth) -> {
             String dateStr = String.format(Locale.CHINA, "%04d-%02d-%02d", year, month + 1, dayOfMonth);
             prefs.edit().putString("semester_start_date", dateStr).apply();
-            AlarmScheduler.scheduleAllAlarms(this);
             Toast.makeText(this, "学期开始日期已设置为 " + dateStr, Toast.LENGTH_SHORT).show();
         }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
     }
@@ -191,7 +182,6 @@ public class SettingsActivity extends AppCompatActivity
                 .setTitle("每日节数")
                 .setSingleChoiceItems(entries, selected, (dialog, which) -> {
                     prefs.edit().putString("total_sections", values[which]).apply();
-                    AlarmScheduler.scheduleAllAlarms(this);
                     dialog.dismiss();
                 })
                 .setNegativeButton("取消", null)
@@ -204,6 +194,7 @@ public class SettingsActivity extends AppCompatActivity
                 .setMessage("确定要删除所有课程吗？此操作不可撤销。")
                 .setPositiveButton("清空", (dialog, which) -> {
                     CourseRepository.getInstance(getApplication()).deleteAll();
+                    AlarmScheduler.cancelAllAlarms(this);
                     Toast.makeText(this, "已清空所有课程", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("取消", null)
@@ -234,6 +225,7 @@ public class SettingsActivity extends AppCompatActivity
         tvBeforeClassTime.setText(beforeMinutes + " 分钟");
         
         updateReminderSummary();
+        updateReminderPermissionSummary();
     }
 
     private int getTotalSections() {
@@ -256,7 +248,6 @@ public class SettingsActivity extends AppCompatActivity
                 .setTitle("提前提醒时间")
                 .setSingleChoiceItems(options, selectedIndex, (dialog, which) -> {
                     prefs.edit().putInt("before_class_reminder_minutes", values[which]).apply();
-                    updateReminderSummary();
                     dialog.dismiss();
                 })
                 .setNegativeButton("取消", null)
@@ -270,6 +261,52 @@ public class SettingsActivity extends AppCompatActivity
         
         boolean afterClassEnabled = prefs.getBoolean("after_class_notify_enabled", false);
         tvAfterClassSummary.setText(afterClassEnabled ? "下课时推送通知" : "已关闭");
+    }
+
+    private void updateReminderPermissionSummary() {
+        boolean notificationGranted = isNotificationPermissionGranted();
+        boolean exactAlarmGranted = AlarmScheduler.canScheduleExactAlarms(this);
+
+        if (notificationGranted && exactAlarmGranted) {
+            tvReminderPermissionSummary.setText("通知与精确闹钟权限正常");
+        } else if (!notificationGranted && !exactAlarmGranted) {
+            tvReminderPermissionSummary.setText("通知和精确闹钟权限未开启，点击处理");
+        } else if (!notificationGranted) {
+            tvReminderPermissionSummary.setText("通知权限未开启，点击授权");
+        } else {
+            tvReminderPermissionSummary.setText("精确闹钟权限未开启，点击前往系统设置");
+        }
+    }
+
+    private void handleReminderPermissionClick() {
+        if (!isNotificationPermissionGranted()) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS);
+            }
+            return;
+        }
+
+        if (!AlarmScheduler.canScheduleExactAlarms(this)) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
+                        .setData(Uri.parse("package:" + getPackageName()));
+                try {
+                    startActivity(intent);
+                } catch (Exception e) {
+                    startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                            .setData(Uri.parse("package:" + getPackageName())));
+                }
+            }
+            return;
+        }
+
+        Toast.makeText(this, "提醒权限已开启", Toast.LENGTH_SHORT).show();
+    }
+
+    private boolean isNotificationPermissionGranted() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU
+                || ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+                == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
@@ -289,13 +326,32 @@ public class SettingsActivity extends AppCompatActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
         if (key == null) return;
         updateSummaries();
-        if (key.equals("notify_enabled")) {
-            boolean enabled = sharedPreferences.getBoolean(key, true);
-            if (enabled) {
-                AlarmScheduler.scheduleAllAlarms(this);
-            } else {
-                AlarmScheduler.cancelAllAlarms(this);
-            }
+        if (isReminderScheduleKey(key)) {
+            rescheduleCourseReminders();
+        }
+    }
+
+    private boolean isReminderScheduleKey(String key) {
+        if (key.equals("notify_enabled")
+                || key.equals("after_class_notify_enabled")
+                || key.equals("before_class_reminder_minutes")
+                || key.equals("semester_start_date")
+                || key.equals("total_sections")
+                || key.equals(SectionTimeMapper.KEY_FIRST_START)
+                || key.equals(SectionTimeMapper.KEY_DURATION)
+                || key.equals(SectionTimeMapper.KEY_BREAK)) {
+            return true;
+        }
+        return key.startsWith("section_") && (key.endsWith("_start") || key.endsWith("_end"));
+    }
+
+    private void rescheduleCourseReminders() {
+        boolean beforeClassEnabled = prefs.getBoolean("notify_enabled", true);
+        boolean afterClassEnabled = prefs.getBoolean("after_class_notify_enabled", false);
+        if (beforeClassEnabled || afterClassEnabled) {
+            AlarmScheduler.scheduleAllAlarms(this);
+        } else {
+            AlarmScheduler.cancelAllAlarms(this);
         }
     }
 }

@@ -7,7 +7,6 @@
 
 ## 🔧 代码质量
 - ⚠️ 文件 SectionTimeMapper.java 中有多个 catch 块，考虑统一异常处理
-- ⚠️ 文件 ReminderWorker.java 中有 7 个硬编码中文字符串
 - ⚠️ 文件 SectionTimeConfigActivity.java 中 findViewById 调用过多，考虑使用 ViewBinding
 - ⚠️ 文件 SectionTimeConfigActivity.java 中有 19 个硬编码中文字符串
 - ⚠️ 文件 SettingsActivity.java 中 findViewById 调用过多，考虑使用 ViewBinding
@@ -30,7 +29,6 @@
 ## ⚡ 性能优化
 - ⚠️ SectionTimeMapper.java 中有静态 Context 引用，可能导致内存泄漏
 - ⚠️ NotificationHelper.java 中有静态 Context 引用，可能导致内存泄漏
-- ⚠️ ReminderWorker.java 中有静态 Context 引用，可能导致内存泄漏
 - ⚠️ AlarmScheduler.java 中有静态 Context 引用，可能导致内存泄漏
 - ⚠️ CourseRepository.java 中有静态 Context 引用，可能导致内存泄漏
 - ⚠️ AppDatabase.java 中有静态 Context 引用，可能导致内存泄漏
@@ -55,7 +53,7 @@
 
 ### 中优先级
 1. 统一UI风格和交互
-2. 优化提醒功能（WorkManager）
+2. 持续优化 AlarmManager 精确提醒与权限提示
 3. 改进错误处理和用户反馈
 
 ### 低优先级

@@ -33,15 +33,7 @@ import androidx.preference.PreferenceManager;
 import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.schedule.app.R;
-import com.schedule.app.data.entity.Course;
 import com.schedule.app.data.repository.CourseRepository;
-import com.schedule.app.notification.AlarmScheduler;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * 在应用内打开正方教务：手动登录并进入「学生课表」页面后，点击悬浮按钮导入。
@@ -102,6 +94,7 @@ public class ImportActivity extends AppCompatActivity {
     private WebView webView;
     private ProgressBar progressBar;
     private CourseRepository repository;
+    private ScheduleImportService importService;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private int loadingToken = 0;
     private final ActivityResultLauncher<String[]> externalFileImportLauncher =
@@ -115,6 +108,7 @@ public class ImportActivity extends AppCompatActivity {
         setContentView(R.layout.activity_import);
 
         repository = CourseRepository.getInstance(getApplication());
+        importService = new ScheduleImportService(this);
 
         MaterialToolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
@@ -329,79 +323,26 @@ public class ImportActivity extends AppCompatActivity {
         if (uri == null) {
             return;
         }
-        try (InputStream is = getContentResolver().openInputStream(uri)) {
-            if (is == null) {
-                Toast.makeText(this, "无法读取所选文件", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            String text = readStreamAsUtf8String(is);
-            List<Course> courses = new KbcxMarkdownParser().parse(text);
-            String method = "Markdown 文件";
-
-            if (courses.isEmpty()) {
-                courses = new ZhengfangKbListJsonParser().parse(text);
-                method = getString(R.string.import_method_json);
-            }
-
-            if (courses.isEmpty()) {
-                courses = new ZhengfangParser().parse(text);
-                method = "外部浏览器保存的 HTML";
-            }
-
-            if (courses.isEmpty()) {
+        try {
+            ImportResult result = importService.parseText(importService.readTextFromUri(uri));
+            if (result.getCourses().isEmpty()) {
                 Toast.makeText(this,
                         "未解析到课程。请确认文件是课表页 HTML、正方课表 JSON 或 kbcx_schedule.md。",
                         Toast.LENGTH_LONG).show();
                 return;
             }
 
-            showImportDialog(courses, method);
-        } catch (IOException e) {
-            Toast.makeText(this, "读取失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            showImportDialog(result);
         } catch (Exception e) {
-            Toast.makeText(this, "解析失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "导入失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
         }
     }
 
-    private static String readStreamAsUtf8String(InputStream is) throws IOException {
-        ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        byte[] b = new byte[8192];
-        int n;
-        while ((n = is.read(b)) != -1) {
-            buf.write(b, 0, n);
-        }
-        return buf.toString(StandardCharsets.UTF_8.name());
-    }
-
-    private void showImportDialog(List<Course> courses, String methodHint) {
-        new AlertDialog.Builder(this)
-                .setTitle(R.string.import_confirm_title)
-                .setMessage(getString(R.string.import_confirm_message, courses.size(), methodHint))
-                .setPositiveButton("合并导入", (dialog, which) -> {
-                    repository.mergeCourses(courses, (added, skipped) -> runOnUiThread(() -> {
-                        AlarmScheduler.scheduleAllAlarms(ImportActivity.this);
-                        String msg = "新增 " + added + " 条";
-                        if (skipped > 0) msg += "，跳过 " + skipped + " 条重复";
-                        Toast.makeText(ImportActivity.this, msg, Toast.LENGTH_SHORT).show();
-                        progressBar.setVisibility(View.GONE);
-                        finish();
-                    }));
-                })
-                .setNeutralButton("清空后导入", (dialog, which) -> {
-                    repository.deleteAll();
-                    repository.insertAllAndCallback(courses, () -> runOnUiThread(() -> {
-                        AlarmScheduler.scheduleAllAlarms(ImportActivity.this);
-                        Toast.makeText(ImportActivity.this,
-                                getString(R.string.import_success, courses.size()),
-                                Toast.LENGTH_SHORT).show();
-                        progressBar.setVisibility(View.GONE);
-                        finish();
-                    }));
-                })
-                .setNegativeButton(android.R.string.cancel, (dialog, which) ->
-                        progressBar.setVisibility(View.GONE))
-                .show();
+    private void showImportDialog(ImportResult result) {
+        ImportConfirmDialog.show(this, repository, result, () -> {
+            progressBar.setVisibility(View.GONE);
+            finish();
+        }, () -> progressBar.setVisibility(View.GONE));
     }
 
     private class JsBridge {
@@ -409,11 +350,11 @@ public class ImportActivity extends AppCompatActivity {
         public void onKbJson(String jsonText) {
             runOnUiThread(() -> {
                 try {
-                    List<Course> fromJson = new ZhengfangKbListJsonParser().parse(jsonText);
-                    if (!fromJson.isEmpty()) {
+                    ImportResult result = importService.parseText(jsonText);
+                    if (!result.getCourses().isEmpty()
+                            && getString(R.string.import_method_json).equals(result.getMethodHint())) {
                         progressBar.setVisibility(View.GONE);
-                        showImportDialog(fromJson,
-                                getString(R.string.import_method_json));
+                        showImportDialog(result);
                         return;
                     }
                 } catch (Exception ignored) {
@@ -426,10 +367,9 @@ public class ImportActivity extends AppCompatActivity {
         public void onHtmlReceived(String html) {
             runOnUiThread(() -> {
                 try {
-                    ZhengfangParser parser = new ZhengfangParser();
-                    List<Course> courses = parser.parse(html);
+                    ImportResult result = importService.parseText(html);
 
-                    if (courses.isEmpty()) {
+                    if (result.getCourses().isEmpty()) {
                         progressBar.setVisibility(View.GONE);
                         Toast.makeText(ImportActivity.this,
                                 R.string.import_failed_html,
@@ -437,7 +377,8 @@ public class ImportActivity extends AppCompatActivity {
                         return;
                     }
 
-                    showImportDialog(courses, getString(R.string.import_method_html));
+                    showImportDialog(new ImportResult(result.getCourses(),
+                            getString(R.string.import_method_html)));
                 } catch (Exception e) {
                     progressBar.setVisibility(View.GONE);
                     Toast.makeText(ImportActivity.this,
