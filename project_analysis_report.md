@@ -23,7 +23,6 @@
 - ⚠️ 布局文件 activity_section_time_config.xml 中有 30 个硬编码尺寸
 - ⚠️ 布局文件 activity_settings.xml 中有 98 个硬编码尺寸
 - ⚠️ 布局文件 activity_add_course.xml 中有 63 个硬编码尺寸
-- ⚠️ 布局文件 activity_splash.xml 中有 6 个硬编码尺寸
 - ⚠️ 布局文件 fragment_schedule.xml 中有 39 个硬编码尺寸
 
 ## ⚡ 性能优化

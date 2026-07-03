@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">我的课表</string>
-    <string name="splash_subtitle">一眼掌握今天的课程</string>
     <string name="tab_schedule">课表</string>
     <string name="tab_discover">导入</string>
     <string name="tab_profile">设置</string>

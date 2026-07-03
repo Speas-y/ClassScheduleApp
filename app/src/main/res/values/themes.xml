@@ -17,11 +17,4 @@
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:fontFamily">sans</item>
     </style>
-
-    <style name="Theme.ClassSchedule.Splash" parent="Theme.ClassSchedule">
-        <item name="android:windowBackground">@drawable/splash_background</item>
-        <item name="android:navigationBarColor">@color/primary</item>
-        <item name="android:windowNoTitle">true</item>
-        <item name="android:windowActionBar">false</item>
-    </style>
 </resources>
